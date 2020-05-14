@@ -242,3 +242,26 @@ def se_restore(client, data):
 def se_verify(client, data):
     ret = client.call(messages.BixinVerifyDeviceRequest(data=data))
     return ret
+
+@expect(messages.Success, field="message")
+def bixinapp(client):
+    ret = client.call(messages.BackupDevice())
+    return ret
+
+
+@expect(messages.BixinBackupAck, field="data")
+def se_backup(client):
+    ret = client.call(messages.BixinBackupRequest())
+    return ret
+
+
+@expect(messages.Success, field="message")
+def se_restore(client, data):
+    ret = client.call(messages.BixinRestoreRequest(data=data))
+    return ret
+
+
+@expect(messages.BixinVerifyDeviceAck, field="data")
+def se_verify(client, data):
+    ret = client.call(messages.BixinVerifyDeviceRequest(data=data))
+    return ret
