@@ -220,8 +220,10 @@ def session(f):
         __tracebackhide__ = True  # for pytest # pylint: disable=W0612
         client.open()
         try:
+            print(f"begin session for==={f}")
             return f(client, *args, **kwargs)
         finally:
+            print(f"end session for {f}")
             client.close()
 
     return wrapped_f
