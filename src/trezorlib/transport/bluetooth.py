@@ -26,18 +26,17 @@ class BlueToothHandler(Handle):
 
     def close(self) -> None:
         pass
-
-    def write_chunk(self, chunk: bytes) -> None:
+    @classmethod
+    def write_chunk(cls, chunk: bytes) -> None:
         global WRITE_SUCCESS
-        global RESPONSE
-        assert self.BLE is not None, "the bluetooth device is not available"
+        assert cls.BLE is not None, "the bluetooth device is not available"
         chunks = binascii.unhexlify(bytes(chunk).hex())
+        cls.RESPONSE = ''
         while True:
             if WRITE_SUCCESS:
                 WRITE_SUCCESS = False
-                success = self.BLE.write(self.BLE_DEVICE, chunks, self.CALL_BACK)
+                success = cls.BLE.write(cls.BLE_DEVICE, chunks, cls.CALL_BACK)
                 if success:
-                    RESPONSE = ''
                     return
                 else:
                     raise BaseException("send failed")
@@ -54,10 +53,10 @@ class BlueToothHandler(Handle):
                 new_response = bytes(binascii.unhexlify(cls.RESPONSE))
                 cls.RESPONSE = ''
                 return new_response
-            elif wait_seconds >= 30:
+            elif wait_seconds >= 6:
                 raise BaseException("read ble response timeout")
             else:
-                time.sleep(0.001)
+                time.sleep(0.01)
 
 
 class BlueToothTransport(ProtocolBasedTransport):

@@ -214,6 +214,7 @@ class ProtocolV1(Protocol):
                 chunk = chunk.ljust(REPLEN, b"\x00")
                 send_packets.extend(chunk)
                 waiting_packets = waiting_packets[63:]
+            print(f"sending in ble {bytes(send_packets).hex()}")
             self.handle.write_chunk(bytes(send_packets))
             buffer = buffer[189:]
 
@@ -270,14 +271,12 @@ class ProtocolV1(Protocol):
 
     def ble_read(self) -> protobuf.MessageType:
         response = self.handle.read_ble()
+        print(f"========{response.hex()}")
         if response[:3] != b"?##":
             raise RuntimeError("Unexpected magic characters")
         try:
             headerlen = struct.calcsize(">HL")
             msg_type, data_len = struct.unpack(">HL", response[3: 3 + headerlen])
-            # while data_len > 235:
-            #     data_len -= 244
-            #     response += self.handle.read_ble()
         except Exception:
             raise RuntimeError(f"Cannot parse header")
         print(f"receive response in BLE ===={protobuf.load_message(BytesIO(response[3+headerlen:]), mapping.get_class(msg_type))}")
