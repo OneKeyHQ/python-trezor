@@ -21,7 +21,7 @@ from typing import Iterable, Optional, cast
 
 from ..log import DUMP_PACKETS
 from . import TransportException
-from .protocol import ProtocolBasedTransport, ProtocolV1, Handle
+from .protocol import ProtocolBasedTransport, ProtocolV1
 
 SOCKET_TIMEOUT = 10
 
@@ -33,7 +33,7 @@ class UdpTransport(ProtocolBasedTransport):
     DEFAULT_HOST = "127.0.0.1"
     DEFAULT_PORT = 21324
     PATH_PREFIX = "udp"
-    ENABLED = False
+    ENABLED = True
 
     def __init__(self, device: str = None) -> None:
         if not device:
@@ -133,7 +133,6 @@ class UdpTransport(ProtocolBasedTransport):
         self.socket.sendall(chunk)
 
     def read_chunk(self) -> bytes:
-        global chunk
         assert self.socket is not None
         while True:
             try:
