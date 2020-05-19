@@ -103,10 +103,13 @@ def all_transports() -> Iterable[Type[Transport]]:
     from .hid import HidTransport
     from .udp import UdpTransport
     from .webusb import WebUsbTransport
+    from .nfc import NFCTransport
+    from .bluetooth import BlueToothTransport
+    from .android_usb import AndroidUsbTransport
 
     return set(
         cls
-        for cls in (BridgeTransport, HidTransport, UdpTransport, WebUsbTransport)
+        for cls in (BridgeTransport, HidTransport, UdpTransport, WebUsbTransport, NFCTransport, BlueToothTransport, AndroidUsbTransport)
         if cls.ENABLED
     )
 

@@ -36,7 +36,7 @@ def apply_settings(
     passphrase_always_on_device: bool = None,
     fee_pay_pin: bool = None,
     use_ble: bool = None,
-    use_se: bool = False,
+    use_se: bool = None,
     is_bixinapp: bool = None,
     fee_pay_confirm: bool = None,
     fee_pay_money_limit: int = None,
@@ -258,10 +258,4 @@ def se_backup(client):
 @expect(messages.Success, field="message")
 def se_restore(client, data):
     ret = client.call(messages.BixinRestoreRequest(data=data))
-    return ret
-
-
-@expect(messages.BixinVerifyDeviceAck, field="data")
-def se_verify(client, data):
-    ret = client.call(messages.BixinVerifyDeviceRequest(data=data))
     return ret

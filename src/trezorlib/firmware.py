@@ -21,6 +21,7 @@ from typing import Callable, List, Tuple
 import construct as c
 import ecdsa
 
+from trezorlib.transport import protocol
 from . import cosi, messages, tools
 
 try:
@@ -484,11 +485,20 @@ def validate(
 
 
 @tools.session
-def update(client, data):
+def update(client, data, type=""):
     if client.features.bootloader_mode is False:
         raise RuntimeError("Device must be in bootloader mode")
-
-    resp = client.call(messages.FirmwareErase(length=len(data)))
+    if client.features.offset:
+        protocol.HTTP = True
+        protocol.OFFSET = client.features.offset
+        protocol.TOTAL = len(data)
+        data = data[client.features.offset:]
+        resp = client.call(messages.FirmwareUpload(payload=data))
+    else:
+        if type:
+            resp = client.call(messages.FirmwareEraseBle(length=len(data)))
+        else:
+            resp = client.call(messages.FirmwareErase(length=len(data)))
 
     # TREZORv1 method
     if isinstance(resp, messages.Success):

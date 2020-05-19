@@ -3,7 +3,7 @@ import time
 
 from typing import Iterable, Optional, cast
 
-from .protocol import ProtocolBasedTransport, get_protocol, Handle, ProtocolV1
+from .protocol import ProtocolBasedTransport, Handle, ProtocolV1
 from cn.com.heaton.blelibrary.ble.callback import BleWriteCallback
 from cn.com.heaton.blelibrary.ble import Ble
 from cn.com.heaton.blelibrary.ble.model import BleDevice

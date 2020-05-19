@@ -46,7 +46,7 @@ class AndroidUsbHandle(Handle):
         if self.handle is not None:
             self.handle.releaseInterface(self.interface)
             self.handle.close()
-        self.handle = None
+        self.device = None
 
     def write_chunk(self, chunk: bytes) -> None:
         assert self.handle is not None

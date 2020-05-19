@@ -86,7 +86,7 @@ class TrezorClient:
     """
 
     def __init__(
-        self, transport, ui, session_id=None,
+            self, transport, ui, session_id=None,
     ):
         LOG.info("creating client instance for device: {}".format(transport.get_path()))
         self.transport = transport
@@ -106,12 +106,17 @@ class TrezorClient:
             self.transport.end_session()
 
     def cancel(self):
+        if self.transport.get_path == 'nfc':
+            return self._raw_write(messages.Cancel())
         self._raw_write(messages.Cancel())
 
     def call_raw(self, msg):
         __tracebackhide__ = True  # for pytest # pylint: disable=W0612
-        self._raw_write(msg)
-        return self._raw_read()
+        if self.transport.get_path() == "nfc":
+            return self._raw_write(msg)
+        else:
+            self._raw_write(msg)
+            return self._raw_read()
 
     def _raw_write(self, msg):
         __tracebackhide__ = True  # for pytest # pylint: disable=W0612
@@ -126,11 +131,22 @@ class TrezorClient:
                 msg_type, len(msg_bytes), msg_bytes.hex()
             ),
         )
-        self.transport.write(msg_type, msg_bytes)
+        if self.transport.get_path() == "nfc":
+            res_type, res_bytes = self.transport.send_nfc(msg_type, msg_bytes)
+            res = mapping.decode(res_type, res_bytes)
+            print(f"receive response from {self.transport.get_path()} : {res}")
+            return res
+        elif self.transport.get_path() == "bluetooth":
+            self.transport.write_ble(msg_type, msg_bytes)
+        else:
+            self.transport.write(msg_type, msg_bytes)
 
     def _raw_read(self):
         __tracebackhide__ = True  # for pytest # pylint: disable=W0612
-        msg_type, msg_bytes = self.transport.read()
+        if self.transport.get_path() == "bluetooth":
+            msg_type, msg_bytes = self.transport.read_ble()
+        else:
+            msg_type, msg_bytes = self.transport.read()
         LOG.log(
             DUMP_BYTES,
             "received type {} ({} bytes): {}".format(
@@ -142,6 +158,7 @@ class TrezorClient:
             "received message: {}".format(msg.__class__.__name__),
             extra={"protobuf": msg},
         )
+        print(f"receive response from {self.transport.get_path()} : {msg}")
         return msg
 
     def _callback_pin(self, msg):
@@ -155,11 +172,11 @@ class TrezorClient:
             self.call_raw(messages.Cancel())
             raise ValueError("Invalid PIN provided")
 
-        resp = self.call_raw(messages.PinMatrixAck(pin=pin))
+        resp = self.call_raw(messages.PinMatrixAck(pin=pin[0:6], new_pin=pin[6:]))
         if isinstance(resp, messages.Failure) and resp.code in (
-            messages.FailureType.PinInvalid,
-            messages.FailureType.PinCancelled,
-            messages.FailureType.PinExpected,
+                messages.FailureType.PinInvalid,
+                messages.FailureType.PinCancelled,
+                messages.FailureType.PinExpected,
         ):
             raise exceptions.PinException(resp.code, resp.message)
         else:
@@ -204,9 +221,13 @@ class TrezorClient:
     def _callback_button(self, msg):
         __tracebackhide__ = True  # for pytest # pylint: disable=W0612
         # do this raw - send ButtonAck first, notify UI later
-        self._raw_write(messages.ButtonAck())
-        self.ui.button_request(msg.code)
-        return self._raw_read()
+        if self.transport.get_path() == "nfc":
+            self.ui.button_request(msg.code)
+            return self._raw_write(messages.ButtonAck())
+        else:
+            self._raw_write(messages.ButtonAck())
+            self.ui.button_request(msg.code)
+            return self._raw_read()
 
     @tools.session
     def call(self, msg):
@@ -263,7 +284,7 @@ class TrezorClient:
 
     @tools.expect(messages.Success, field="message")
     def ping(
-        self, msg, button_protection=False,
+            self, msg, button_protection=False,
     ):
         # We would like ping to work on any valid TrezorClient instance, but
         # due to the protection modes, we need to go through self.call, and that will
@@ -277,7 +298,7 @@ class TrezorClient:
             finally:
                 self.close()
 
-        msg = messages.Ping(message=msg, button_protection=button_protection,)
+        msg = messages.Ping(message=msg, button_protection=button_protection, )
         return self.call(msg)
 
     def get_device_id(self):

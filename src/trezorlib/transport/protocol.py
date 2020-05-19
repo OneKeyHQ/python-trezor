@@ -23,11 +23,16 @@ from typing_extensions import Protocol as StructuralType
 from . import MessagePayload, Transport
 
 REPLEN = 64
-
+BLE_REPLEN = 192
+REPLEN_NFC = 1024
 V2_FIRST_CHUNK = 0x01
 V2_NEXT_CHUNK = 0x02
 V2_BEGIN_SESSION = 0x03
 V2_END_SESSION = 0x04
+PROCESS_REPORTER = None
+HTTP = False
+OFFSET = 0
+TOTAL = 0
 
 LOG = logging.getLogger(__name__)
 
@@ -54,6 +59,12 @@ class Handle(StructuralType):
         ...
 
     def write_chunk(self, chunk: bytes) -> None:
+        ...
+
+    def write_chunk_nfc(self, chunk: bytearray) -> bytes:
+        ...
+
+    def read_ble(self) -> bytes:
         ...
 
 
@@ -96,6 +107,15 @@ class Protocol:
     def write(self, message_type: int, message_data: bytes) -> None:
         raise NotImplementedError
 
+    def nfc_send(self, message_type: int, message_data: bytes) -> MessagePayload:
+        raise NotImplementedError
+
+    def ble_read(self) -> MessagePayload:
+        raise NotImplementedError
+
+    def write_ble(self, message_type: int, message_data: bytes):
+        raise NotImplementedError
+
 
 class ProtocolBasedTransport(Transport):
     """Transport that implements its communications through a Protocol.
@@ -113,6 +133,15 @@ class ProtocolBasedTransport(Transport):
     def read(self) -> MessagePayload:
         return self.protocol.read()
 
+    def write_ble(self, message_type: int, message_data: bytes) -> None:
+        self.protocol.write_ble(message_type, message_data)
+
+    def send_nfc(self, message_type: int, message_data: bytes) -> MessagePayload:
+        return self.protocol.nfc_send(message_type, message_data)
+
+    def read_ble(self) -> MessagePayload:
+        return self.protocol.ble_read()
+
     def begin_session(self) -> None:
         self.protocol.begin_session()
 
@@ -128,11 +157,17 @@ class ProtocolV1(Protocol):
     HEADER_LEN = struct.calcsize(">HL")
 
     def write(self, message_type: int, message_data: bytes) -> None:
+        global PROCESS_REPORTER
         header = struct.pack(">HL", message_type, len(message_data))
         buffer = bytearray(b"##" + header + message_data)
-
+        origin = len(buffer)
         while buffer:
-            # Report ID, data padded to 63 bytes
+            if PROCESS_REPORTER and origin >= 64:
+                left = round(len(buffer) / origin, 2)
+                PROCESS_REPORTER.publishProgress(int((1 - left) * 100))
+                if len(buffer) <= 64:
+                    PROCESS_REPORTER = None
+                # Report ID, data padded to 63 bytes
             chunk = b"?" + buffer[: REPLEN - 1]
             chunk = chunk.ljust(REPLEN, b"\x00")
             self.handle.write_chunk(chunk)
@@ -155,11 +190,11 @@ class ProtocolV1(Protocol):
         if chunk[:3] != b"?##":
             raise RuntimeError("Unexpected magic characters")
         try:
-            msg_type, datalen = struct.unpack(">HL", chunk[3 : 3 + self.HEADER_LEN])
+            msg_type, datalen = struct.unpack(">HL", chunk[3: 3 + self.HEADER_LEN])
         except Exception:
             raise RuntimeError("Cannot parse header")
 
-        data = chunk[3 + self.HEADER_LEN :]
+        data = chunk[3 + self.HEADER_LEN:]
         return msg_type, datalen, data
 
     def read_next(self) -> bytes:
@@ -167,3 +202,77 @@ class ProtocolV1(Protocol):
         if chunk[:1] != b"?":
             raise RuntimeError("Unexpected magic characters")
         return chunk[1:]
+
+    def write_ble(self, message_type: int, message_data: bytes) -> None:
+        global PROCESS_REPORTER
+        header = struct.pack(">HL", message_type, len(message_data))
+        buffer = bytearray(b"##" + header + message_data)
+        origin = len(buffer)
+        while buffer:
+            if PROCESS_REPORTER and origin >= 64:
+                left = round(len(buffer) / origin, 2)
+                PROCESS_REPORTER.publishProgress(int((1 - left) * 100))
+                if len(buffer) <= 64:
+                    PROCESS_REPORTER = None
+            # Report ID, data padded to 63 bytes
+            waiting_packets = buffer[:189]
+            send_packets = []
+            while waiting_packets:
+                chunk = b"?" + waiting_packets[: REPLEN - 1]
+                chunk = chunk.ljust(REPLEN, b"\x00")
+                send_packets.extend(chunk)
+                waiting_packets = waiting_packets[63:]
+            self.handle.write_chunk(bytes(send_packets))
+            buffer = buffer[189:]
+
+    def nfc_send(self, message_type: int, message_data: bytes) -> MessagePayload:
+        global PROCESS_REPORTER, HTTP, OFFSET
+        header = struct.pack(">HL", message_type, len(message_data))
+        buffer = bytearray(b"##" + header + message_data)
+        # split buffer into 64 bytes one package to send
+        origin = len(buffer)
+        if HTTP and OFFSET:
+            origin = TOTAL
+        while buffer:
+            # used for android update progress bar
+            if PROCESS_REPORTER and origin >= 64:
+                left = round(len(buffer) / origin, 2)
+                PROCESS_REPORTER.publishProgress(int((1 - left) * 100))
+                if len(buffer) <= 64:
+                    PROCESS_REPORTER = None
+            # Report ID, data padded to 63 bytes
+            waiting_packets = buffer[:2205]
+            send_packets = bytearray()
+            while waiting_packets:
+                chunk = b"?" + waiting_packets[: REPLEN - 1]
+                chunk = chunk.ljust(REPLEN, b"\x00")
+                send_packets.extend(chunk)
+                waiting_packets = waiting_packets[63:]
+            print(f"send in nfc {bytes(send_packets).hex()}")
+            response = self.handle.write_chunk_nfc(send_packets)
+            if response == b'\x90\x00':
+                buffer = buffer[2205:]
+            else:
+                print(f"unknown response {response}")
+                raise BaseException("Unexpected response")
+        print(f"send in nfc #**")
+        response = b'#**'
+        while response == b'#**':
+            response = self.handle.write_chunk_nfc(bytearray(b'#**'))
+        if response[:3] != b"?##":
+            raise RuntimeError("Unexpected magic characters")
+        try:
+            msg_type, data_len = struct.unpack(">HL", response[3: 3 + self.HEADER_LEN])
+        except Exception:
+            raise RuntimeError("Cannot parse header")
+        return msg_type, response[3 + self.HEADER_LEN:]
+
+    def ble_read(self) -> MessagePayload:
+        response = self.handle.read_ble()
+        if response[:3] != b"?##":
+            raise RuntimeError("Unexpected magic characters")
+        try:
+            msg_type, data_len = struct.unpack(">HL", response[3: 3 + self.HEADER_LEN])
+        except Exception:
+            raise RuntimeError(f"Cannot parse header")
+        return msg_type, response[3 + self.HEADER_LEN:]
