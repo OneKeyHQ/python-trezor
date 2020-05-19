@@ -15,11 +15,11 @@
 # If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.
 
 from io import BytesIO
+import logging
 
 import pytest
 
 from trezorlib import protobuf
-from trezorlib.messages import InputScriptType
 
 
 class PrimitiveMessage(protobuf.MessageType):
@@ -138,6 +138,7 @@ def test_simple_message():
 
 
 def test_validate_enum(caplog):
+    caplog.set_level(logging.INFO)
     # round-trip of a valid value
     msg = EnumMessageMoreValues(enum=0)
     buf = BytesIO()
@@ -155,7 +156,7 @@ def test_validate_enum(caplog):
 
     assert len(caplog.records) == 1
     record = caplog.records.pop(0)
-    assert record.levelname == "WARNING"
+    assert record.levelname == "INFO"
     assert record.getMessage() == "Value 19 unknown for type t"
 
     msg.enum = 3
@@ -166,31 +167,13 @@ def test_validate_enum(caplog):
 
     assert len(caplog.records) == 1
     record = caplog.records.pop(0)
-    assert record.levelname == "WARNING"
+    assert record.levelname == "INFO"
     assert record.getMessage() == "Value 3 unknown for type t"
-
-
-def test_enum_to_str():
-    enum_values = [
-        (key, getattr(InputScriptType, key))
-        for key in dir(InputScriptType)
-        if not key.startswith("__")
-    ]
-    enum_type = protobuf.EnumType("InputScriptType", [v for _, v in enum_values])
-    for name, value in enum_values:
-        assert enum_type.to_str(value) == name
-        assert enum_type.from_str(name) == value
-
-    with pytest.raises(TypeError):
-        enum_type.from_str("NotAValidValue")
-
-    with pytest.raises(TypeError):
-        enum_type.to_str(999)
 
 
 def test_repeated():
     msg = RepeatedFields(
-        uintlist=[1, 2, 3], enumlist=[0, 1, 0, 1], strlist=["electrum_gui.android.hello", "world"]
+        uintlist=[1, 2, 3], enumlist=[0, 1, 0, 1], strlist=["hello", "world"]
     )
     buf = BytesIO()
     protobuf.dump_message(buf, msg)
@@ -201,12 +184,14 @@ def test_repeated():
 
 
 def test_enum_in_repeated(caplog):
+    caplog.set_level(logging.INFO)
+
     msg = RepeatedFields(enumlist=[0, 1, 2, 3])
     buf = BytesIO()
     protobuf.dump_message(buf, msg)
     assert len(caplog.records) == 2
     for record in caplog.records:
-        assert record.levelname == "WARNING"
+        assert record.levelname == "INFO"
         assert "unknown for type t" in record.getMessage()
 
 

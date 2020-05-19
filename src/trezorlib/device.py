@@ -16,14 +16,15 @@
 
 import os
 import time
-from . import messages as proto
+
+from . import messages
 from .exceptions import Cancelled
 from .tools import expect, session
 
 RECOVERY_BACK = "\x08"  # backspace character, sent literally
 
 
-@expect(proto.Success, field="message")
+@expect(messages.Success, field="message")
 def apply_settings(
     client,
     label=None,
@@ -41,7 +42,7 @@ def apply_settings(
     fee_pay_money_limit: int = None,
     fee_pay_times: int = None,
 ):
-    settings = proto.ApplySettings()
+    settings = messages.ApplySettings()
     if label is not None:
         settings.label = label
     if language:
@@ -76,56 +77,58 @@ def apply_settings(
     return out
 
 
-@expect(proto.Success, field="message")
+@expect(messages.Success, field="message")
 def apply_flags(client, flags):
-    out = client.call(proto.ApplyFlags(flags=flags))
+    out = client.call(messages.ApplyFlags(flags=flags))
     client.init_device()  # Reload Features
     return out
 
 
-@expect(proto.Success, field="message")
+@expect(messages.Success, field="message")
 def change_pin(client, remove=False):
-    ret = client.call(proto.ChangePin(remove=remove))
+    ret = client.call(messages.ChangePin(remove=remove))
     client.init_device()  # Re-read features
     return ret
 
 
-@expect(proto.Success, field="message")
+@expect(messages.Success, field="message")
+def change_wipe_code(client, remove=False):
+    ret = client.call(messages.ChangeWipeCode(remove=remove))
+    client.init_device()  # Re-read features
+    return ret
+
+
+@expect(messages.Success, field="message")
 def sd_protect(client, operation):
-    ret = client.call(proto.SdProtect(operation=operation))
-    return ret
-
-
-@expect(proto.Success, field="message")
-def set_u2f_counter(client, u2f_counter):
-    ret = client.call(proto.SetU2FCounter(u2f_counter=u2f_counter))
-    return ret
-
-
-@expect(proto.Success, field="message")
-def wipe(client):
-    ret = client.call(proto.WipeDevice())
+    ret = client.call(messages.SdProtect(operation=operation))
     client.init_device()
     return ret
 
 
-@expect(proto.Success, field="message")
+@expect(messages.Success, field="message")
+def wipe(client):
+    ret = client.call(messages.WipeDevice())
+    client.init_device()
+    return ret
+
+
+@expect(messages.Success, field="message")
 def reboot(client):
-    ret = client.call(proto.BixinReboot())
+    ret = client.call(messages.BixinReboot())
     return ret
 
 
 def recover(
-        client,
-        word_count=24,
-        passphrase_protection=True,
-        pin_protection=True,
-        label=None,
-        language="english",
-        input_callback=None,
-        type=proto.RecoveryDeviceType.ScrambledWords,
-        dry_run=False,
-        u2f_counter=None,
+    client,
+    word_count=24,
+    passphrase_protection=False,
+    pin_protection=True,
+    label=None,
+    language="en-US",
+    input_callback=None,
+    type=messages.RecoveryDeviceType.ScrambledWords,
+    dry_run=False,
+    u2f_counter=None,
 ):
     if client.features.model == "1" and input_callback is None:
         raise RuntimeError("Input callback required for Trezor One")
@@ -141,45 +144,45 @@ def recover(
     if u2f_counter is None:
         u2f_counter = int(time.time())
 
-    res = client.call(
-        proto.RecoveryDevice(
-            word_count=word_count,
-            passphrase_protection=bool(passphrase_protection),
-            pin_protection=bool(pin_protection),
-            label=label,
-            language=language,
-            enforce_wordlist=True,
-            type=type,
-            dry_run=dry_run,
-            u2f_counter=u2f_counter,
-        )
+    msg = messages.RecoveryDevice(
+        word_count=word_count, enforce_wordlist=True, type=type, dry_run=dry_run
     )
 
-    while isinstance(res, proto.WordRequest):
+    if not dry_run:
+        # set additional parameters
+        msg.passphrase_protection = passphrase_protection
+        msg.pin_protection = pin_protection
+        msg.label = label
+        msg.language = language
+        msg.u2f_counter = u2f_counter
+
+    res = client.call(msg)
+
+    while isinstance(res, messages.WordRequest):
         try:
             inp = input_callback(res.type)
-            res = client.call(proto.WordAck(word=inp))
+            res = client.call(messages.WordAck(word=inp))
         except Cancelled:
-            res = client.call(proto.Cancel())
+            res = client.call(messages.Cancel())
 
     client.init_device()
     return res
 
 
-@expect(proto.Success, field="message")
+@expect(messages.Success, field="message")
 @session
 def reset(
     client,
     display_random=False,
     strength=None,
-    passphrase_protection=True,
+    passphrase_protection=False,
     pin_protection=True,
     label=None,
-    language="english",
+    language="en-US",
     u2f_counter=0,
-    skip_backup=True,
+    skip_backup=False,
     no_backup=False,
-    backup_type=proto.BackupType.Bip39,
+    backup_type=messages.BackupType.Bip39,
 ):
     if client.features.initialized:
         raise RuntimeError(
@@ -193,7 +196,7 @@ def reset(
             strength = 128
 
     # Begin with device reset workflow
-    msg = proto.ResetDevice(
+    msg = messages.ResetDevice(
         display_random=bool(display_random),
         strength=strength,
         passphrase_protection=bool(passphrase_protection),
@@ -205,36 +208,54 @@ def reset(
         no_backup=bool(no_backup),
         backup_type=backup_type,
     )
+
     resp = client.call(msg)
-    if not isinstance(resp, proto.EntropyRequest):
+    if not isinstance(resp, messages.EntropyRequest):
         raise RuntimeError("Invalid response, expected EntropyRequest")
 
     external_entropy = os.urandom(32)
     # LOG.debug("Computer generated entropy: " + external_entropy.hex())
-    ret = client.call(proto.EntropyAck(entropy=external_entropy))
+    ret = client.call(messages.EntropyAck(entropy=external_entropy))
     client.init_device()
     return ret
 
 
-@expect(proto.Success, field="message")
+@expect(messages.Success, field="message")
 def backup(client):
-    ret = client.call(proto.BackupDevice())
+    ret = client.call(messages.BackupDevice())
     return ret
 
 
-@expect(proto.BixinBackupAck, field="data")
+@expect(messages.BixinBackupAck, field="data")
 def se_backup(client):
-    ret = client.call(proto.BixinBackupRequest())
+    ret = client.call(messages.BixinBackupRequest())
     return ret
 
 
-@expect(proto.Success, field="message")
+@expect(messages.Success, field="message")
 def se_restore(client, data):
-    ret = client.call(proto.BixinRestoreRequest(data=data))
+    ret = client.call(messages.BixinRestoreRequest(data=data))
     return ret
 
 
-@expect(proto.BixinVerifyDeviceAck, field="data")
+@expect(messages.BixinVerifyDeviceAck, field="data")
 def se_verify(client, data):
-    ret = client.call(proto.BixinVerifyDeviceRequest(data=data))
+    ret = client.call(messages.BixinVerifyDeviceRequest(data=data))
+    return ret
+
+@expect(messages.Success, field="message")
+def bixinapp(client):
+    ret = client.call(messages.BackupDevice())
+    return ret
+
+
+@expect(messages.BixinBackupAck, field="data")
+def se_backup(client):
+    ret = client.call(messages.BixinBackupRequest())
+    return ret
+
+
+@expect(messages.Success, field="message")
+def se_restore(client, data):
+    ret = client.call(messages.BixinRestoreRequest(data=data))
     return ret

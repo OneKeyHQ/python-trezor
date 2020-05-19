@@ -10,16 +10,17 @@ if __debug__:
         pass
 
 
-class BixinSeedExportData(p.MessageType):
+class NextU2FCounter(p.MessageType):
+    MESSAGE_WIRE_TYPE = 81
 
     def __init__(
         self,
-        seed_exportdata: str = None,
+        u2f_counter: int = None,
     ) -> None:
-        self.seed_exportdata = seed_exportdata
+        self.u2f_counter = u2f_counter
 
     @classmethod
     def get_fields(cls) -> Dict:
         return {
-            1: ('seed_exportdata', p.UnicodeType, 0),
+            1: ('u2f_counter', p.UVarintType, 0),
         }

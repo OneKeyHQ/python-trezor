@@ -21,11 +21,6 @@ import struct
 import unicodedata
 from typing import List, NewType
 
-from .coins import slip44
-from .exceptions import TrezorFailure
-
-CallException = TrezorFailure
-
 HARDENED_FLAG = 1 << 31
 
 Address = NewType("Address", List[int])
@@ -168,11 +163,6 @@ def parse_path(nstr: str) -> Address:
     if n[0] == "m":
         n = n[1:]
 
-    # coin_name/a/b/c => 44'/SLIP44_constant'/a/b/c
-    if n[0] in slip44:
-        coin_id = slip44[n[0]]
-        n[0:1] = ["44h", "{}h".format(coin_id)]
-
     def str_to_harden(x: str) -> int:
         if x.startswith("-"):
             return H_(abs(int(x)))
@@ -183,8 +173,8 @@ def parse_path(nstr: str) -> Address:
 
     try:
         return [str_to_harden(x) for x in n]
-    except Exception:
-        raise ValueError("Invalid BIP32 path", nstr)
+    except Exception as e:
+        raise ValueError("Invalid BIP32 path", nstr) from e
 
 
 def normalize_nfc(txt):
@@ -230,10 +220,10 @@ def session(f):
         __tracebackhide__ = True  # for pytest # pylint: disable=W0612
         client.open()
         try:
-            print(f"begin session for==={f}")
+            print(f"begin session for==={f.__name__}")
             return f(client, *args, **kwargs)
         finally:
-            print(f"end session for {f}")
+            print(f"end session for {f.__name__}")
             client.close()
 
     return wrapped_f
