@@ -15,47 +15,54 @@ try:
 except Exception as e:
     LOG.warning("NFC transport is Unavailable: {}".format(e))
 
+IS_CANCEL = False
 
 class NFCHandle(Handle):
     device = None  # type:  Tag
+    handle = None
 
     def __init__(self) -> None:
-        self.device = cast(Tag, NFCHandle.device)
-        self.handle = None  # type: Optional[IsoDep]
+        pass
 
-    def open(self) -> None:
-        if self.device is not None:
-            self.handle = IsoDep.get(self.device)
+    @classmethod
+    def open(cls) -> None:
+        if cls.device is not None:
+            cls.handle = IsoDep.get(cls.device)
             try:
-                self.handle.setTimeout(5000)
-                self.handle.connect()
+                cls.handle.setTimeout(5000)
+                cls.handle.connect()
             except IOException as e:
                 LOG.warning(f"NFC handler open exception {e.getMessage()}")
                 raise BaseException(e)
 
-    def close(self) -> None:
-        if self.handle is not None:
-            self.handle.close()
-        self.handle = None
+    @classmethod
+    def close(cls) -> None:
+        if cls.handle is not None:
+            cls.handle.close()
+        cls.handle = None
 
-    def write_chunk_nfc(self, chunk: bytearray) -> bytes:
-        assert self.handle is not None, "NFC handler is None"
+    @classmethod
+    def write_chunk_nfc(cls, chunk: bytearray) -> bytes:
+        assert cls.handle is not None, "NFC handler is None"
+        global IS_CANCEL
         response = []
         chunks = binascii.unhexlify(bytes(chunk).hex())
         count = 0
         success = False
-        while count < 3 and not success:
+        IS_CANCEL = False
+        while count < 3 and not success and not IS_CANCEL and NFCTransport.ENABLED:
             try:
-                response =  bytes(self.handle.transceive(chunks))
+                response = bytes(cls.handle.transceive(chunks))
                 success = True
             except IOException as e:
-                if  count < 2:
+                if count < 2:
                     count = count + 1
                     print(f"send in nfc =====retry: {count}===={e.getMessage()}")
                     time.sleep(0.01)
                 else:
-                    LOG.warning(f"NFC handler write exception {e.getMessage()}")
                     raise BaseException(e)
+        if not response:
+            raise BaseException("user cancel")
         return response
 
 

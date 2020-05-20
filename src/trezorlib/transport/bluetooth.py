@@ -30,12 +30,14 @@ class BlueToothHandler(Handle):
 
     @classmethod
     def write_chunk(cls, chunk: bytes) -> None:
-        global WRITE_SUCCESS
+        global WRITE_SUCCESS, IS_CANCEL
         assert cls.BLE is not None, "the bluetooth device is not available"
         chunks = binascii.unhexlify(bytes(chunk).hex())
         cls.RESPONSE = ''
-        cls.IS_CANCEL = False
-        while True and not cls.IS_CANCEL:
+        IS_CANCEL = False
+        start = int(time.time())
+        while True and not IS_CANCEL and BlueToothTransport.ENABLED:
+            wait_seconds = int(time.time()) - start
             if WRITE_SUCCESS:
                 WRITE_SUCCESS = False
                 success = cls.BLE.write(cls.BLE_DEVICE, chunks, cls.CALL_BACK)
@@ -43,17 +45,19 @@ class BlueToothHandler(Handle):
                     return
                 else:
                     raise BaseException("send failed")
-
+            elif wait_seconds >= 5:
+                raise BaseException("waiting notify success timeout")
             else:
                 time.sleep(0.001)
-        if cls.IS_CANCEL:
+        if IS_CANCEL or not BlueToothTransport.ENABLED:
             raise BaseException("user cancel")
 
     @classmethod
     def read_ble(cls) -> bytes:
+        global IS_CANCEL
         start = int(time.time())
-        cls.IS_CANCEL = False
-        while True and not cls.IS_CANCEL:
+        IS_CANCEL = False
+        while True and not IS_CANCEL and BlueToothTransport.ENABLED:
             wait_seconds = int(time.time()) - start
             if cls.RESPONSE:
                 new_response = bytes(binascii.unhexlify(cls.RESPONSE))
@@ -63,7 +67,7 @@ class BlueToothHandler(Handle):
                 raise BaseException("read ble response timeout")
             else:
                 time.sleep(0.01)
-        if cls.IS_CANCEL:
+        if IS_CANCEL or not BlueToothTransport.ENABLED:
             raise BaseException("user cancel")
 
 

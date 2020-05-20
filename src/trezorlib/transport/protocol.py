@@ -258,6 +258,7 @@ class ProtocolV1(Protocol):
         print(f"send in nfc #**")
         response = b'#**'
         while response == b'#**':
+            print(f"receive from nfc====={response}===")
             response = self.handle.write_chunk_nfc(bytearray(b'#**'))
         if response[:3] != b"?##":
             raise RuntimeError("Unexpected magic characters")
