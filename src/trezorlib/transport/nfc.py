@@ -39,7 +39,7 @@ class NFCHandle(Handle):
     def close(cls) -> None:
         if cls.handle is not None:
             cls.handle.close()
-        cls.handle = None
+            cls.handle = None
 
     @classmethod
     def write_chunk_nfc(cls, chunk: bytearray) -> bytes:
@@ -50,7 +50,9 @@ class NFCHandle(Handle):
         count = 0
         success = False
         IS_CANCEL = False
+        import threading
         while count < 3 and not success and not IS_CANCEL and NFCTransport.ENABLED:
+            print(f"nfc write in ===={threading.currentThread().ident}")
             try:
                 response = bytes(cls.handle.transceive(chunks))
                 success = True

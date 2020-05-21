@@ -36,7 +36,9 @@ class BlueToothHandler(Handle):
         cls.RESPONSE = ''
         IS_CANCEL = False
         start = int(time.time())
+        import threading
         while True and not IS_CANCEL and BlueToothTransport.ENABLED:
+            print(f"ble write in ===={threading.currentThread().ident}")
             wait_seconds = int(time.time()) - start
             if WRITE_SUCCESS:
                 WRITE_SUCCESS = False
@@ -57,7 +59,9 @@ class BlueToothHandler(Handle):
         global IS_CANCEL
         start = int(time.time())
         IS_CANCEL = False
+        import threading
         while True and not IS_CANCEL and BlueToothTransport.ENABLED:
+            print(f"ble read in ===={threading.currentThread().ident}")
             wait_seconds = int(time.time()) - start
             if cls.RESPONSE:
                 new_response = bytes(binascii.unhexlify(cls.RESPONSE))

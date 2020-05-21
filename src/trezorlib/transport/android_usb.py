@@ -29,7 +29,7 @@ class AndroidUsbHandle(Handle):
         self.manger = USB_Manager  # type: UsbManager
         self.interface = None  # type: UsbInterface
         self.endpoint_in = None  # type: UsbEndpoint
-        self.endpoint_out = None # type: UsbEndpoint
+        self.endpoint_out = None  # type: UsbEndpoint
         self.handle = None  # type: UsbDeviceConnection
 
     def open(self) -> None:
@@ -46,7 +46,8 @@ class AndroidUsbHandle(Handle):
         if self.handle is not None:
             self.handle.releaseInterface(self.interface)
             self.handle.close()
-        self.device = None
+
+    #  self.device = None
 
     def write_chunk(self, chunk: bytes) -> None:
         assert self.handle is not None

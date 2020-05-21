@@ -219,11 +219,13 @@ def session(f):
     def wrapped_f(client, *args, **kwargs):
         __tracebackhide__ = True  # for pytest # pylint: disable=W0612
         client.open()
+        import threading
         try:
-            print(f"begin session for==={f.__name__}")
+
+            print(f"begin session for==={f.__name__}===in==={threading.currentThread().ident}")
             return f(client, *args, **kwargs)
         finally:
-            print(f"end session for {f.__name__}")
+            print(f"end session for {f.__name__}=====in====={threading.currentThread().ident}")
             client.close()
 
     return wrapped_f
