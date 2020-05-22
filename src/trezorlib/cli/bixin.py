@@ -56,7 +56,8 @@ def restore(client, hex_data):
 def verify(client, data):
     """Perform device verify."""
     from hashlib import sha256
-    digest = sha256(data.encode('utf-8')).digest()
+
+    digest = sha256(data.encode("utf-8")).digest()
     ret = device.se_verify(client, digest)
     return "cert: {} \n signature: {}".format(ret.cert.hex(), ret.signature.hex())
 
@@ -71,8 +72,8 @@ def free(client, no_pin, no_confirm, pay_limit, pay_times):
     """set pay no pin or no confirm"""
     return device.apply_settings(
         client,
-        fee_pay_pin=no_pin,
-        fee_pay_confirm=no_confirm,
-        fee_pay_money_limit=pay_limit,
-        fee_pay_times=pay_times,
+        fastpay_pin=no_pin,
+        fastpay_confirm=no_confirm,
+        fastpay_money_limit=pay_limit,
+        fastpay_times=pay_times,
     )
