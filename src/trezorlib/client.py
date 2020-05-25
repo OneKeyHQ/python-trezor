@@ -168,7 +168,7 @@ class TrezorClient:
             self.call_raw(messages.Cancel())
             raise
 
-        if any(d not in "123456789" for d in pin) or not (1 <= len(pin) <= 9):
+        if any(d not in "123456789" for d in pin) or not (1 <= len(pin) <= 12):
             self.call_raw(messages.Cancel())
             raise ValueError("Invalid PIN provided")
 

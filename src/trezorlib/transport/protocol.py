@@ -16,11 +16,13 @@
 
 import logging
 import struct
+import time
 from typing import Tuple
 
 from typing_extensions import Protocol as StructuralType
 
 from . import MessagePayload, Transport
+from threading import Event
 
 REPLEN = 64
 BLE_REPLEN = 192
@@ -33,6 +35,7 @@ PROCESS_REPORTER = None
 HTTP = False
 OFFSET = 0
 TOTAL = 0
+event = Event()
 
 LOG = logging.getLogger(__name__)
 
@@ -67,6 +70,9 @@ class Handle(StructuralType):
     def read_ble(self) -> bytes:
         ...
 
+
+def notify():
+    event.set()
 
 class Protocol:
     """Wire protocol that can communicate with a Trezor device, given a Handle.
@@ -260,6 +266,15 @@ class ProtocolV1(Protocol):
         while response == b'#**':
             print(f"receive from nfc====={response}===")
             response = self.handle.write_chunk_nfc(bytearray(b'#**'))
+            if message_type == 27 and response == b'#**':
+                message_type = 250  # if you ask me who is 250? it's sure that lihuanhuan is.
+                start = int(time.time())
+                print(f"等待读取===========")
+                event.wait(60)
+                event.clear()
+                if int(time.time()) - start >= 60:
+                    raise BaseException("waiting nfc touch timeout")
+
         if response[:3] != b"?##":
             raise RuntimeError("Unexpected magic characters")
         try:
