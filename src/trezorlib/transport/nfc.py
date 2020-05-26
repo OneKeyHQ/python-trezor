@@ -2,9 +2,10 @@ import time
 
 import logging
 from typing import Iterable, Optional
-from .protocol import ProtocolBasedTransport, ProtocolV1, Handle
+from .protocol import ProtocolBasedTransport, ProtocolV1, Handle, event
 from java.io import IOException
 import binascii
+
 LOG = logging.getLogger(__name__)
 
 try:
@@ -62,7 +63,9 @@ class NFCHandle(Handle):
                     print(f"send in nfc =====retry: {count}===={e.getMessage()}")
                     time.sleep(0.01)
                 else:
-                    raise BaseException(e)
+                    event.wait(10)
+            finally:
+                event.clear()
         if not response:
             raise BaseException("user cancel")
         return response
