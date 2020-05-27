@@ -49,26 +49,31 @@ class NFCHandle(Handle):
         response = []
         chunks = binascii.unhexlify(bytes(chunk).hex())
         count = 0
-        success = False
+        # success = False
         IS_CANCEL = False
         import threading
-        while count < 3 and not success and not IS_CANCEL and NFCTransport.ENABLED:
+        # while count < 3 and not success and not IS_CANCEL and NFCTransport.ENABLED:
+        while count < 3 and not IS_CANCEL and NFCTransport.ENABLED:
             print(f"nfc write in ===={threading.currentThread().ident}")
             try:
-                response = bytes(cls.handle.transceive(chunks))
-                success = True
+                if not IS_CANCEL:
+                    response = bytes(cls.handle.transceive(chunks))
+                    # success = True
+                    return response
             except IOException as e:
                 if count < 2:
                     count = count + 1
                     print(f"send in nfc =====retry: {count}===={e.getMessage()}")
                     time.sleep(0.01)
                 else:
+                    print(f"fnc waiting touch, is_cancel== {IS_CANCEL}")
                     event.wait(10)
             finally:
-                event.clear()
+                if event.is_set():
+                    event.clear()
         if not response:
             raise BaseException("user cancel")
-        return response
+        # return response
 
 
 class NFCTransport(ProtocolBasedTransport):
