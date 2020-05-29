@@ -18,6 +18,7 @@ class CustomerUI:
     @classmethod
     def get_pin(cls, code) -> str:
         cls.code = code
+        cls.user_cancel = 0
         cls.pin = ''
         if cls.handler:
             if code == 'Enter a new PIN for your Trezor:':
@@ -60,6 +61,7 @@ class CustomerUI:
     def get_passphrase(cls, msg) -> str:
         cls.code = msg
         cls.passphrase = ''
+        cls.user_cancel = 0
         if cls.pass_state == 0:
             return ''
         cls.pass_state = 0

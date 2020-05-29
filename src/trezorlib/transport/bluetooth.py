@@ -40,7 +40,7 @@ class BlueToothHandler(Handle):
         while True and not IS_CANCEL and BlueToothTransport.ENABLED:
             print(f"ble write in ===={threading.currentThread().ident}")
             wait_seconds = int(time.time()) - start
-            if WRITE_SUCCESS:
+            if WRITE_SUCCESS and not IS_CANCEL:
                 WRITE_SUCCESS = False
                 success = cls.BLE.write(cls.BLE_DEVICE, chunks, cls.CALL_BACK)
                 if success:
@@ -63,7 +63,7 @@ class BlueToothHandler(Handle):
         while True and not IS_CANCEL and BlueToothTransport.ENABLED:
             print(f"ble read in ===={threading.currentThread().ident}")
             wait_seconds = int(time.time()) - start
-            if cls.RESPONSE:
+            if cls.RESPONSE and not IS_CANCEL:
                 new_response = bytes(binascii.unhexlify(cls.RESPONSE))
                 cls.RESPONSE = ''
                 return new_response
@@ -72,6 +72,7 @@ class BlueToothHandler(Handle):
             else:
                 time.sleep(0.01)
         if IS_CANCEL or not BlueToothTransport.ENABLED:
+            cls.RESPONSE = ''
             raise BaseException("user cancel")
 
 

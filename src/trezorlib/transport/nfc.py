@@ -64,6 +64,9 @@ class NFCHandle(Handle):
                 if count < 2:
                     count = count + 1
                     print(f"send in nfc =====retry: {count}===={e.getMessage()}")
+                    if e.getMessage() == 'Transceive length exceeds supported maximum':
+                        cls.close()
+                        cls.open()
                     time.sleep(0.01)
                 else:
                     print(f"fnc waiting touch, is_cancel== {IS_CANCEL}")
