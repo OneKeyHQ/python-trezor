@@ -18,6 +18,7 @@ except Exception as e:
 
 IS_CANCEL = False
 
+
 class NFCHandle(Handle):
     device = None  # type:  Tag
     handle = None
@@ -43,7 +44,7 @@ class NFCHandle(Handle):
             cls.handle = None
 
     @classmethod
-    def write_chunk_nfc(cls, chunk: bytearray) -> bytes:
+    def write_chunk_nfc(cls, chunk: bytearray, _type=0) -> bytes:
         assert cls.handle is not None, "NFC handler is None"
         global IS_CANCEL
         response = []
@@ -54,12 +55,20 @@ class NFCHandle(Handle):
         import threading
         # while count < 3 and not success and not IS_CANCEL and NFCTransport.ENABLED:
         while count < 3 and not IS_CANCEL and NFCTransport.ENABLED:
-            print(f"nfc write in ===={threading.currentThread().ident}")
+            # print(f"nfc write in ===={threading.currentThread().ident}")
             try:
-                if not IS_CANCEL:
+                while not IS_CANCEL:
                     response = bytes(cls.handle.transceive(chunks))
                     # success = True
-                    return response
+                    if response != b'#**':
+                        return response
+                    else:
+                        if _type == 27:
+                            _type = 0
+                            event.wait(60)
+                            if not event.is_set():
+                                raise BaseException("waiting nfc touch timeout")
+                            event.clear()
             except IOException as e:
                 if count < 2:
                     count = count + 1
@@ -69,7 +78,7 @@ class NFCHandle(Handle):
                         cls.open()
                     time.sleep(0.01)
                 else:
-                    print(f"fnc waiting touch, is_cancel== {IS_CANCEL}")
+                    print(f"nfc waiting touch, is_cancel== {IS_CANCEL}")
                     event.wait(10)
             finally:
                 if event.is_set():

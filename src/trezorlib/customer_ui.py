@@ -3,6 +3,8 @@ import time
 from electrum.util import print_stderr, raw_input, _logger
 
 from android.os import Handler
+from threading import Timer
+from .transport import protocol
 
 
 class CustomerUI:
@@ -91,6 +93,10 @@ class CustomerUI:
 
     @classmethod
     def button_request(cls, code):
+        if code == 9:
+            timer = Timer(1.0, lambda : protocol.notify())
+            timer.start()
+            return
         cls.handler.sendEmptyMessage(9)
         return
 

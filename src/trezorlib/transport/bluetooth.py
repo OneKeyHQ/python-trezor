@@ -37,8 +37,8 @@ class BlueToothHandler(Handle):
         IS_CANCEL = False
         start = int(time.time())
         import threading
-        while True and not IS_CANCEL and BlueToothTransport.ENABLED:
-            print(f"ble write in ===={threading.currentThread().ident}")
+        while not IS_CANCEL and BlueToothTransport.ENABLED:
+            # print(f"ble write in ===={threading.currentThread().ident}")
             wait_seconds = int(time.time()) - start
             if WRITE_SUCCESS and not IS_CANCEL:
                 WRITE_SUCCESS = False
@@ -48,7 +48,7 @@ class BlueToothHandler(Handle):
                 else:
                     raise BaseException("send failed")
             elif wait_seconds >= 5:
-                raise BaseException("waiting notify success timeout")
+                raise BaseException("waiting send timeout")
             else:
                 time.sleep(0.001)
         if IS_CANCEL or not BlueToothTransport.ENABLED:
@@ -60,8 +60,8 @@ class BlueToothHandler(Handle):
         start = int(time.time())
         IS_CANCEL = False
         import threading
-        while True and not IS_CANCEL and BlueToothTransport.ENABLED:
-            print(f"ble read in ===={threading.currentThread().ident}")
+        while not IS_CANCEL and BlueToothTransport.ENABLED:
+            # print(f"ble read in ===={threading.currentThread().ident}===={IS_CANCEL}")
             wait_seconds = int(time.time()) - start
             if cls.RESPONSE and not IS_CANCEL:
                 new_response = bytes(binascii.unhexlify(cls.RESPONSE))
@@ -70,7 +70,7 @@ class BlueToothHandler(Handle):
             elif wait_seconds >= 30:
                 raise BaseException("read ble response timeout")
             else:
-                time.sleep(0.01)
+                time.sleep(0.1)
         if IS_CANCEL or not BlueToothTransport.ENABLED:
             cls.RESPONSE = ''
             raise BaseException("user cancel")

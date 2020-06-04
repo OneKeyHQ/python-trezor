@@ -64,7 +64,7 @@ class Handle(StructuralType):
     def write_chunk(self, chunk: bytes) -> None:
         ...
 
-    def write_chunk_nfc(self, chunk: bytearray) -> bytes:
+    def write_chunk_nfc(self, chunk: bytearray, _type=0) -> bytes:
         ...
 
     def read_ble(self) -> bytes:
@@ -73,6 +73,7 @@ class Handle(StructuralType):
 
 def notify():
     event.set()
+
 
 class Protocol:
     """Wire protocol that can communicate with a Trezor device, given a Handle.
@@ -246,35 +247,22 @@ class ProtocolV1(Protocol):
                 PROCESS_REPORTER.publishProgress(int((1 - left) * 100))
                 if len(buffer) <= 64:
                     PROCESS_REPORTER = None
-            # Report ID, data padded to 63 bytes
             waiting_packets = buffer[:2205]
             send_packets = bytearray()
             while waiting_packets:
                 chunk = b"?" + waiting_packets[: REPLEN - 1]
+                # Report ID, data padded to 63 bytes
                 chunk = chunk.ljust(REPLEN, b"\x00")
                 send_packets.extend(chunk)
                 waiting_packets = waiting_packets[63:]
             print(f"send in nfc {bytes(send_packets).hex()}")
-            response = self.handle.write_chunk_nfc(send_packets)
+            response = self.handle.write_chunk_nfc(send_packets, _type=message_type)
             if response == b'\x90\x00':
                 buffer = buffer[2205:]
             else:
                 print(f"unknown response {response}")
                 raise BaseException("Unexpected response")
-        print(f"send in nfc #**")
-        response = b'#**'
-        while response == b'#**':
-            print(f"receive from nfc====={response}===")
-            response = self.handle.write_chunk_nfc(bytearray(b'#**'))
-            if message_type == 27 and response == b'#**':
-                message_type = 250  # if you ask me who is 250? it's sure that lihuanhuan is.
-                start = int(time.time())
-                print(f"等待读取===========")
-                event.wait(60)
-                event.clear()
-                if int(time.time()) - start >= 60:
-                    raise BaseException("waiting nfc touch timeout")
-
+        response = self.handle.write_chunk_nfc(bytearray(b'#**'))
         if response[:3] != b"?##":
             raise RuntimeError("Unexpected magic characters")
         try:
