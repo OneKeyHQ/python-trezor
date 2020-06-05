@@ -16,13 +16,11 @@
 
 import logging
 import struct
-import time
+from threading import Event
 from typing import Tuple
-
 from typing_extensions import Protocol as StructuralType
 
 from . import MessagePayload, Transport
-from threading import Event
 
 REPLEN = 64
 BLE_REPLEN = 192
@@ -211,10 +209,12 @@ class ProtocolV1(Protocol):
         return chunk[1:]
 
     def write_ble(self, message_type: int, message_data: bytes) -> None:
-        global PROCESS_REPORTER
+        global PROCESS_REPORTER, HTTP, OFFSET
         header = struct.pack(">HL", message_type, len(message_data))
         buffer = bytearray(b"##" + header + message_data)
         origin = len(buffer)
+        if HTTP and OFFSET:
+            origin = TOTAL
         while buffer:
             if PROCESS_REPORTER and origin >= 64:
                 left = round(len(buffer) / origin, 2)
@@ -263,6 +263,7 @@ class ProtocolV1(Protocol):
                 print(f"unknown response {response}")
                 raise BaseException("Unexpected response")
         response = self.handle.write_chunk_nfc(bytearray(b'#**'))
+        assert response is not None, "Unexpected response None"
         if response[:3] != b"?##":
             raise RuntimeError("Unexpected magic characters")
         try:

@@ -494,26 +494,28 @@ def update(client, data, type=""):
         protocol.TOTAL = len(data)
         data = data[client.features.offset:]
         resp = client.call(messages.FirmwareUpload(payload=data))
+
     else:
         if type:
             resp = client.call(messages.FirmwareEraseBle(length=len(data)))
         else:
             resp = client.call(messages.FirmwareErase(length=len(data)))
 
-    # TREZORv1 method
-    if isinstance(resp, messages.Success):
-        resp = client.call(messages.FirmwareUpload(payload=data))
+        # TREZORv1 method
         if isinstance(resp, messages.Success):
-            return
-        else:
-            raise RuntimeError("Unexpected result %s" % resp)
+            resp = client.call(messages.FirmwareUpload(payload=data))
+            if isinstance(resp, messages.Success):
+                return
+            else:
+                raise RuntimeError("Unexpected result %s" % resp)
 
-    # TREZORv2 method
-    while isinstance(resp, messages.FirmwareRequest):
-        payload = data[resp.offset : resp.offset + resp.length]
-        digest = blake2s(payload).digest()
-        resp = client.call(messages.FirmwareUpload(payload=payload, hash=digest))
-
+        # TREZORv2 method
+        while isinstance(resp, messages.FirmwareRequest):
+            payload = data[resp.offset : resp.offset + resp.length]
+            digest = blake2s(payload).digest()
+            resp = client.call(messages.FirmwareUpload(payload=payload, hash=digest))
+    protocol.HTTP = False
+    protocol.TOTAL = 0
     if isinstance(resp, messages.Success):
         return
     else:
