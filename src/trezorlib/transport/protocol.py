@@ -247,6 +247,8 @@ class ProtocolV1(Protocol):
                 PROCESS_REPORTER.publishProgress(int((1 - left) * 100))
                 if len(buffer) <= 64:
                     PROCESS_REPORTER = None
+            # in order to maximizing the transmission efficiency(253/packet in underlying,
+            #  2205 is a tradeoff value)
             waiting_packets = buffer[:2205]
             send_packets = bytearray()
             while waiting_packets:
@@ -256,16 +258,20 @@ class ProtocolV1(Protocol):
                 send_packets.extend(chunk)
                 waiting_packets = waiting_packets[63:]
             print(f"send in nfc {bytes(send_packets).hex()}")
+            # the response will returned immediately with b'\x90\x00' which means the firmware is
+            # received this request. and then we would send another request with b'#**' to retrieve
+            # the data we wanted.
             response = self.handle.write_chunk_nfc(send_packets, _type=message_type)
             if response == b'\x90\x00':
                 buffer = buffer[2205:]
             else:
                 print(f"unknown response {response}")
                 raise BaseException("Unexpected response")
+        # here we send b'#**' to retrieve our response
         response = self.handle.write_chunk_nfc(bytearray(b'#**'))
         assert response is not None, "Unexpected response None"
         if response[:3] != b"?##":
-            raise RuntimeError("Unexpected magic characters")
+            raise RuntimeError(f"Unexpected magic characters =={response[:3]}")
         try:
             msg_type, data_len = struct.unpack(">HL", response[3: 3 + self.HEADER_LEN])
         except Exception:

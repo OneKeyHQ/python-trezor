@@ -18,11 +18,9 @@ Timeout = 100
 forceClaim = True
 USB_Manager = None
 USB_DEVICE = None
-
+RESPONSE = ByteBuffer.allocate(64)
 
 class AndroidUsbHandle(Handle):
-    USB_Manager = None
-    USB_DEVICE = None
 
     def __init__(self) -> None:
         self.device = USB_DEVICE  # type: UsbDevice
@@ -64,15 +62,15 @@ class AndroidUsbHandle(Handle):
 
     def read_chunk(self) -> bytes:
         assert self.handle is not None
-        response = ByteBuffer.allocate(64)
+        RESPONSE.clear()
         request = UsbRequest()
         request.initialize(self.handle, self.endpoint_in)
-        success = request.queue(response)
+        success = request.queue(RESPONSE)
         if success:
             self.handle.requestWait()
         else:
             raise BaseException('android_usb read failed')
-        return bytes(response.array())
+        return bytes(RESPONSE.array())
 
 
 class AndroidUsbTransport(ProtocolBasedTransport):

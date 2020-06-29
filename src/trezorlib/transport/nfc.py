@@ -48,18 +48,22 @@ class NFCHandle(Handle):
         assert cls.handle is not None, "NFC handler is None"
         global IS_CANCEL
         response = []
+        # in order to fix the difference of byte in python and java
         chunks = binascii.unhexlify(bytes(chunk).hex())
         count = 0
         # success = False
         IS_CANCEL = False
         import threading
         # while count < 3 and not success and not IS_CANCEL and NFCTransport.ENABLED:
-        while count < 3 and not IS_CANCEL and NFCTransport.ENABLED:
+        while not IS_CANCEL and NFCTransport.ENABLED:
             # print(f"nfc write in ===={threading.currentThread().ident}")
             try:
                 while not IS_CANCEL:
                     response = bytes(cls.handle.transceive(chunks))
                     # success = True
+                    # if the response is b'#**'which means that the data we wanted is not
+                    # available yet, then we would polling the firmware by b'#**' until
+                    # the data return or error occurred
                     if response != b'#**':
                         return response
                     else:
@@ -79,13 +83,11 @@ class NFCHandle(Handle):
                     time.sleep(0.01)
                 else:
                     print(f"nfc waiting touch, is_cancel== {IS_CANCEL}")
-                    event.wait(10)
+                    event.wait(5)
             finally:
                 if event.is_set():
                     event.clear()
-        if not response:
-            raise BaseException("user cancel")
-        # return response
+        raise BaseException("user cancel")
 
 
 class NFCTransport(ProtocolBasedTransport):

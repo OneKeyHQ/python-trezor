@@ -16,7 +16,7 @@ class CustomerUI:
     user_cancel = 0
     pass_state = 0
     handler = None  # type: Handler
-    # this method must be classmethod in order to get  Memory consistency
+    # this method must be classmethod in order to keep  Memory consistency
     @classmethod
     def get_pin(cls, code) -> str:
         cls.code = code
