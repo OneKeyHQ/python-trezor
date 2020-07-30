@@ -18,7 +18,7 @@ class CustomerUI:
     handler = None  # type: Handler
     # this method must be classmethod in order to keep  Memory consistency
     @classmethod
-    def get_pin(cls, code) -> str:
+    def get_pin(cls, code, show_strength=False) -> str:
         cls.code = code
         cls.user_cancel = 0
         cls.pin = ''
@@ -60,7 +60,7 @@ class CustomerUI:
         return state_current
 
     @classmethod
-    def get_passphrase(cls, msg) -> str:
+    def get_passphrase(cls, msg, confirm=None) -> str:
         cls.code = msg
         cls.passphrase = ''
         cls.user_cancel = 0
