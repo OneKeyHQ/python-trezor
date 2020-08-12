@@ -67,7 +67,7 @@ class BlueToothHandler(Handle):
                 new_response = bytes(binascii.unhexlify(cls.RESPONSE))
                 cls.RESPONSE = ''
                 return new_response
-            elif wait_seconds >= 30:
+            elif wait_seconds >= 120:
                 raise BaseException("read ble response timeout")
             else:
                 time.sleep(0.1)
