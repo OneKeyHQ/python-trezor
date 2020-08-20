@@ -231,8 +231,13 @@ def se_backup(client):
     ret = client.call(messages.BixinBackupRequest())
     return ret
 
-@expect(messages.BixinWhiteListAck, field="list")
-def bx_whitelist(client, type, addr_in):
+@expect(messages.BixinWhiteListAck, field="address")
+def bx_inquire_whitelist(client, type, addr_in=None):
+    ret = client.call(messages.BixinWhiteListRequest(type=type, addr_in=addr_in))
+    return ret
+
+@expect(messages.Success, field="message")
+def bx_add_or_delete_whitelist(client, type, addr_in=None):
     ret = client.call(messages.BixinWhiteListRequest(type=type, addr_in=addr_in))
     return ret
 
