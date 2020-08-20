@@ -15,12 +15,12 @@ class BixinWhiteListAck(p.MessageType):
 
     def __init__(
         self,
-        addres: List[str] = None,
+        address: List[str] = None,
     ) -> None:
-        self.addres = addres if addres is not None else []
+        self.address = address if address is not None else []
 
     @classmethod
     def get_fields(cls) -> Dict:
         return {
-            1: ('addres', p.UnicodeType, p.FLAG_REPEATED),
+            1: ('address', p.UnicodeType, p.FLAG_REPEATED),
         }
