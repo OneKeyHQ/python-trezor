@@ -35,7 +35,8 @@ MAX_PASSPHRASE_LENGTH = 50
 
 PASSPHRASE_ON_DEVICE = object()
 PASSPHRASE_TEST_PATH = tools.parse_path("44h/1h/19h/0/1337")
-
+VERSION=()
+NEWER_VERSION = (1, 9, 7)
 OUTDATED_FIRMWARE_ERROR = """
 Your Trezor firmware is out of date. Update it with the following command:
   trezorctl firmware-update
@@ -264,6 +265,8 @@ class TrezorClient:
             self.features.minor_version,
             self.features.patch_version,
         )
+        global VERSION
+        VERSION = self.version
         self.check_firmware_version(warn_only=True)
         if self.features.session_id is not None:
             self.session_id = self.features.session_id

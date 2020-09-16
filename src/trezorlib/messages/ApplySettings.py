@@ -50,20 +50,40 @@ class ApplySettings(p.MessageType):
 
     @classmethod
     def get_fields(cls) -> Dict:
-        return {
-            1: ('language', p.UnicodeType, 0),
-            2: ('label', p.UnicodeType, 0),
-            3: ('use_passphrase', p.BoolType, 0),
-            4: ('homescreen', p.BytesType, 0),
-            6: ('auto_lock_delay_ms', p.UVarintType, 0),
-            7: ('display_rotation', p.UVarintType, 0),
-            8: ('passphrase_always_on_device', p.BoolType, 0),
-            9: ('safety_checks', p.EnumType("SafetyCheckLevel", (0, 1)), 0),
-            100: ('use_ble', p.BoolType, 0),
-            101: ('use_se', p.BoolType, 0),
-            102: ('is_bixinapp', p.BoolType, 0),
-            103: ('fastpay_pin', p.BoolType, 0),
-            104: ('fastpay_confirm', p.BoolType, 0),
-            105: ('fastpay_money_limit', p.UVarintType, 0),
-            106: ('fastpay_times', p.UVarintType, 0),
-        }
+        from ..client import VERSION, NEWER_VERSION
+        if VERSION >= NEWER_VERSION:
+            return {
+                1: ('language', p.UnicodeType, 0),
+                2: ('label', p.UnicodeType, 0),
+                3: ('use_passphrase', p.BoolType, 0),
+                4: ('homescreen', p.BytesType, 0),
+                6: ('auto_lock_delay_ms', p.UVarintType, 0),
+                7: ('display_rotation', p.UVarintType, 0),
+                8: ('passphrase_always_on_device', p.BoolType, 0),
+                9: ('safety_checks', p.EnumType("SafetyCheckLevel", (0, 1)), 0),
+                100: ('use_ble', p.BoolType, 0),
+                101: ('use_se', p.BoolType, 0),
+                102: ('is_bixinapp', p.BoolType, 0),
+                103: ('fastpay_pin', p.BoolType, 0),
+                104: ('fastpay_confirm', p.BoolType, 0),
+                105: ('fastpay_money_limit', p.UVarintType, 0),
+                106: ('fastpay_times', p.UVarintType, 0),
+            }
+        else:
+            return {
+                1: ('language', p.UnicodeType, 0),
+                2: ('label', p.UnicodeType, 0),
+                3: ('use_passphrase', p.BoolType, 0),
+                4: ('homescreen', p.BytesType, 0),
+                6: ('auto_lock_delay_ms', p.UVarintType, 0),
+                7: ('display_rotation', p.UVarintType, 0),
+                8: ('passphrase_always_on_device', p.BoolType, 0),
+                9: ('use_ble', p.BoolType, 0),
+                10: ('use_se', p.BoolType, 0),
+                11: ('is_bixinapp', p.BoolType, 0),
+                12: ('fastpay_pin', p.BoolType, 0),
+                13: ('fastpay_confirm', p.BoolType, 0),
+                14: ('fastpay_money_limit', p.UVarintType, 0),
+                15: ('fastpay_times', p.UVarintType, 0),
+            }
+
