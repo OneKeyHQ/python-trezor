@@ -29,6 +29,9 @@ from .BixinVerifyDeviceAck import BixinVerifyDeviceAck
 from .BixinVerifyDeviceRequest import BixinVerifyDeviceRequest
 from .BixinWhiteListAck import BixinWhiteListAck
 from .BixinWhiteListRequest import BixinWhiteListRequest
+from .BixinLoadDevice import BixinLoadDevice
+from .BixinBackupDevice import BixinBackupDevice
+from .BixinBackupDeviceAck import BixinBackupDeviceAck
 from .ButtonAck import ButtonAck
 from .ButtonRequest import ButtonRequest
 from .Cancel import Cancel
