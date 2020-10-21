@@ -266,3 +266,22 @@ def se_restore(
 def se_verify(client, data):
     ret = client.call(messages.BixinVerifyDeviceRequest(data=data))
     return ret
+
+@expect(messages.BixinBackupDeviceAck, field='mnemonics')
+def bixin_backup_device(client):
+    ret = client.call(messages.BixinBackupDevice())
+    return ret
+
+@expect(messages.Success, field="message")
+def bixin_load_device(
+        client, mnemonics, language="en-US", label="BIXIN KEY", skip_checksum=True
+):
+    ret = client.call(
+        messages.BixinLoadDevice(
+            mnemonics=mnemonics,
+            language=language,
+            label=label,
+            skip_checksum=bool(skip_checksum),
+        )
+    )
+    return ret
