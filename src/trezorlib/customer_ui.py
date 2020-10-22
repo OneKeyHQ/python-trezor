@@ -1,8 +1,10 @@
 import time
 
 from electrum.util import print_stderr, raw_input, _logger
-
-from android.os import Handler
+try:
+    from android.os import Handler
+except:
+    pass
 from threading import Timer
 from .transport import protocol
 
