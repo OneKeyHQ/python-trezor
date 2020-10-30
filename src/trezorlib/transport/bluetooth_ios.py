@@ -5,17 +5,17 @@ from typing import Iterable
 
 from .protocol import ProtocolBasedTransport, Handle, ProtocolV1
 
-from rubicon.objc import ObjCClass
+from rubicon.objc import ObjCClass, ObjCInstance
 
 WRITE_SUCCESS = True
 IS_CANCEL = False
 
 
 class BlueToothIosHandler(Handle):
-    BLE = None  # type:
-    BLE_DEVICE = None  # type:
+    BLE = None  # type: ObjCInstance
+    BLE_DEVICE = None  # type: str
     BLE_ADDRESS = ''  # type: str
-    CALL_BACK = None  # type:
+    CALL_BACK = None  # type: ObjCInstance
     RESPONSE = ''  # type: str
 
     def __init__(self) -> None:
