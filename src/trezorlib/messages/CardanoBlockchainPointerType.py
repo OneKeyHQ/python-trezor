@@ -10,23 +10,22 @@ if __debug__:
         pass
 
 
-class CardanoTxRequest(p.MessageType):
-    MESSAGE_WIRE_TYPE = 304
+class CardanoBlockchainPointerType(p.MessageType):
 
     def __init__(
         self,
+        block_index: int = None,
         tx_index: int = None,
-        tx_hash: bytes = None,
-        tx_body: bytes = None,
+        certificate_index: int = None,
     ) -> None:
+        self.block_index = block_index
         self.tx_index = tx_index
-        self.tx_hash = tx_hash
-        self.tx_body = tx_body
+        self.certificate_index = certificate_index
 
     @classmethod
     def get_fields(cls) -> Dict:
         return {
-            1: ('tx_index', p.UVarintType, 0),
-            2: ('tx_hash', p.BytesType, 0),
-            3: ('tx_body', p.BytesType, 0),
+            1: ('block_index', p.UVarintType, 0),
+            2: ('tx_index', p.UVarintType, 0),
+            3: ('certificate_index', p.UVarintType, 0),
         }

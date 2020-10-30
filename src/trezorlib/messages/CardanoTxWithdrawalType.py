@@ -10,20 +10,19 @@ if __debug__:
         pass
 
 
-class EthereumAddress(p.MessageType):
-    MESSAGE_WIRE_TYPE = 57
+class CardanoTxWithdrawalType(p.MessageType):
 
     def __init__(
         self,
-        _old_address: bytes = None,
-        address: str = None,
+        path: List[int] = None,
+        amount: int = None,
     ) -> None:
-        self._old_address = _old_address
-        self.address = address
+        self.path = path if path is not None else []
+        self.amount = amount
 
     @classmethod
     def get_fields(cls) -> Dict:
         return {
-            1: ('_old_address', p.BytesType, 0),
-            2: ('address', p.UnicodeType, 0),
+            1: ('path', p.UVarintType, p.FLAG_REPEATED),
+            2: ('amount', p.UVarintType, 0),
         }

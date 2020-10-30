@@ -10,20 +10,17 @@ if __debug__:
         pass
 
 
-class EthereumAddress(p.MessageType):
-    MESSAGE_WIRE_TYPE = 57
+class DebugLinkWatchLayout(p.MessageType):
+    MESSAGE_WIRE_TYPE = 9006
 
     def __init__(
         self,
-        _old_address: bytes = None,
-        address: str = None,
+        watch: bool = None,
     ) -> None:
-        self._old_address = _old_address
-        self.address = address
+        self.watch = watch
 
     @classmethod
     def get_fields(cls) -> Dict:
         return {
-            1: ('_old_address', p.BytesType, 0),
-            2: ('address', p.UnicodeType, 0),
+            1: ('watch', p.BoolType, 0),
         }
