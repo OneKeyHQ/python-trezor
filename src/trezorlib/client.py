@@ -34,9 +34,8 @@ VENDORS = ("bitcointrezor.com", "trezor.io")
 MAX_PASSPHRASE_LENGTH = 50
 
 PASSPHRASE_ON_DEVICE = object()
-PASSPHRASE_TEST_PATH = tools.parse_path("44h/1h/19h/0/1337")
-VERSION=()
-NEWER_VERSION = (1, 9, 7)
+PASSPHRASE_TEST_PATH = tools.parse_path("44h/1h/0h/0/0")
+
 OUTDATED_FIRMWARE_ERROR = """
 Your Trezor firmware is out of date. Update it with the following command:
   trezorctl firmware-update
@@ -87,7 +86,7 @@ class TrezorClient:
     """
 
     def __init__(
-            self, transport, ui, session_id=None,
+        self, transport, ui, session_id=None,
     ):
         LOG.info("creating client instance for device: {}".format(transport.get_path()))
         self.transport = transport
@@ -169,15 +168,15 @@ class TrezorClient:
             self.call_raw(messages.Cancel())
             raise
 
-        if any(d not in "123456789" for d in pin) or not (1 <= len(pin) <= 12):
+        if any(d not in "123456789" for d in pin) or not (1 <= len(pin) <= 9):
             self.call_raw(messages.Cancel())
             raise ValueError("Invalid PIN provided")
 
-        resp = self.call_raw(messages.PinMatrixAck(pin=pin[0:6], new_pin=pin[6:]))
+        resp = self.call_raw(messages.PinMatrixAck(pin=pin))
         if isinstance(resp, messages.Failure) and resp.code in (
-                messages.FailureType.PinInvalid,
-                messages.FailureType.PinCancelled,
-                messages.FailureType.PinExpected,
+            messages.FailureType.PinInvalid,
+            messages.FailureType.PinCancelled,
+            messages.FailureType.PinExpected,
         ):
             raise exceptions.PinException(resp.code, resp.message)
         else:
@@ -287,7 +286,7 @@ class TrezorClient:
 
     @tools.expect(messages.Success, field="message")
     def ping(
-            self, msg, button_protection=False,
+        self, msg, button_protection=False,
     ):
         # We would like ping to work on any valid TrezorClient instance, but
         # due to the protection modes, we need to go through self.call, and that will
@@ -309,7 +308,7 @@ class TrezorClient:
 
     @tools.session
     def clear_session(self):
-        resp = self.call_raw(messages.ClearSession())
+        resp = self.call_raw(messages.LockDevice())  # TODO fix this
         if isinstance(resp, messages.Success):
             self.session_id = None
             self.init_device()

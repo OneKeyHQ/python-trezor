@@ -10,17 +10,17 @@ if __debug__:
         pass
 
 
-class CardanoTxAck(p.MessageType):
-    MESSAGE_WIRE_TYPE = 309
+class OwnershipId(p.MessageType):
+    MESSAGE_WIRE_TYPE = 44
 
     def __init__(
         self,
-        transaction: bytes = None,
+        ownership_id: bytes = None,
     ) -> None:
-        self.transaction = transaction
+        self.ownership_id = ownership_id
 
     @classmethod
     def get_fields(cls) -> Dict:
         return {
-            1: ('transaction', p.BytesType, 0),
+            1: ('ownership_id', p.BytesType, 0),  # required
         }

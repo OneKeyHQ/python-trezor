@@ -31,7 +31,7 @@ class Features(p.MessageType):
         revision: bytes = None,
         bootloader_hash: bytes = None,
         imported: bool = None,
-        pin_cached: bool = None,
+        unlocked: bool = None,
         firmware_present: bool = None,
         needs_backup: bool = None,
         flags: int = None,
@@ -56,7 +56,8 @@ class Features(p.MessageType):
         ble_enable: bool = None,
         se_enable: bool = None,
         offset: int = None,
-        se_version: str = None,
+        auto_lock_delay_ms: int = None,
+        se_ver: str = None,
     ) -> None:
         self.vendor = vendor
         self.major_version = major_version
@@ -72,7 +73,7 @@ class Features(p.MessageType):
         self.revision = revision
         self.bootloader_hash = bootloader_hash
         self.imported = imported
-        self.pin_cached = pin_cached
+        self.unlocked = unlocked
         self.firmware_present = firmware_present
         self.needs_backup = needs_backup
         self.flags = flags
@@ -97,7 +98,8 @@ class Features(p.MessageType):
         self.ble_enable = ble_enable
         self.se_enable = se_enable
         self.offset = offset
-        self.se_version = se_version
+        self.auto_lock_delay_ms = auto_lock_delay_ms
+        self.se_ver = se_ver
 
     @classmethod
     def get_fields(cls) -> Dict:
@@ -116,7 +118,7 @@ class Features(p.MessageType):
             13: ('revision', p.BytesType, 0),
             14: ('bootloader_hash', p.BytesType, 0),
             15: ('imported', p.BoolType, 0),
-            16: ('pin_cached', p.BoolType, 0),
+            16: ('unlocked', p.BoolType, 0),
             18: ('firmware_present', p.BoolType, 0),
             19: ('needs_backup', p.BoolType, 0),
             20: ('flags', p.UVarintType, 0),
@@ -141,5 +143,6 @@ class Features(p.MessageType):
             39: ('ble_enable', p.BoolType, 0),
             40: ('se_enable', p.BoolType, 0),
             50: ('offset', p.UVarintType, 0),
-            52: ('se_version', p.UnicodeType, 0),
+            51: ('auto_lock_delay_ms', p.UVarintType, 0),
+            52: ('se_ver', p.UnicodeType, 0),
         }

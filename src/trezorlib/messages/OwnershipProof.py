@@ -10,20 +10,20 @@ if __debug__:
         pass
 
 
-class EthereumAddress(p.MessageType):
-    MESSAGE_WIRE_TYPE = 57
+class OwnershipProof(p.MessageType):
+    MESSAGE_WIRE_TYPE = 50
 
     def __init__(
         self,
-        _old_address: bytes = None,
-        address: str = None,
+        ownership_proof: bytes = None,
+        signature: bytes = None,
     ) -> None:
-        self._old_address = _old_address
-        self.address = address
+        self.ownership_proof = ownership_proof
+        self.signature = signature
 
     @classmethod
     def get_fields(cls) -> Dict:
         return {
-            1: ('_old_address', p.BytesType, 0),
-            2: ('address', p.UnicodeType, 0),
+            1: ('ownership_proof', p.BytesType, 0),  # required
+            2: ('signature', p.BytesType, 0),  # required
         }

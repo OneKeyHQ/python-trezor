@@ -26,51 +26,41 @@ RECOVERY_BACK = "\x08"  # backspace character, sent literally
 
 @expect(messages.Success, field="message")
 def apply_settings(
-        client,
-        label=None,
-        language=None,
-        use_passphrase=None,
-        homescreen=None,
-        auto_lock_delay_ms=None,
-        display_rotation=None,
-        passphrase_always_on_device: bool = None,
-        fastpay_pin: bool = None,
-        use_ble: bool = None,
-        use_se: bool = None,
-        is_bixinapp: bool = None,
-        fastpay_confirm: bool = None,
-        fastpay_money_limit: int = None,
-        fastpay_times: int = None,
+    client,
+    label=None,
+    language=None,
+    use_passphrase=None,
+    homescreen=None,
+    auto_lock_delay_ms=None,
+    display_rotation=None,
+    passphrase_always_on_device: bool = None,
+    fastpay_pin: bool = None,
+    use_ble: bool = None,
+    use_se: bool = None,
+    is_bixinapp: bool = None,
+    fastpay_confirm: bool = None,
+    fastpay_money_limit: int = None,
+    fastpay_times: int = None,
+    safety_checks=None,
 ):
-    settings = messages.ApplySettings()
-    if label is not None:
-        settings.label = label
-    if language:
-        settings.language = language
-    if use_passphrase is not None:
-        settings.use_passphrase = use_passphrase
-    if homescreen is not None:
-        settings.homescreen = homescreen
-    if passphrase_always_on_device is not None:
-        settings.passphrase_always_on_device = passphrase_always_on_device
-    if auto_lock_delay_ms is not None:
-        settings.auto_lock_delay_ms = auto_lock_delay_ms
-    if display_rotation is not None:
-        settings.display_rotation = display_rotation
-    if use_ble is not None:
-        settings.use_ble = use_ble
-    if use_se is not None:
-        settings.use_se = use_se
-    if is_bixinapp is not None:
-        settings.is_bixinapp = is_bixinapp
-    if fastpay_pin is not None:
-        settings.fastpay_pin = fastpay_pin
-    if fastpay_confirm is not None:
-        settings.fastpay_confirm = fastpay_confirm
-    if fastpay_money_limit is not None:
-        settings.fastpay_money_limit = fastpay_money_limit
-    if fastpay_times is not None:
-        settings.fastpay_times = fastpay_times
+
+    settings = messages.ApplySettings(
+        label=label,
+        language=language,
+        use_passphrase=use_passphrase,
+        homescreen=homescreen,
+        passphrase_always_on_device=passphrase_always_on_device,
+        auto_lock_delay_ms=auto_lock_delay_ms,
+        display_rotation=display_rotation,
+        use_ble=use_ble,
+        use_se=use_se,
+        is_bixinapp=is_bixinapp,
+        fastpay_pin=fastpay_pin,
+        fastpay_confirm=fastpay_confirm,
+        fastpay_money_limit=fastpay_money_limit,
+        fastpay_times=fastpay_times,
+        safety_checks=safety_checks,
+    )
 
     out = client.call(settings)
     client.init_device()  # Reload Features
@@ -119,16 +109,16 @@ def reboot(client):
 
 
 def recover(
-        client,
-        word_count=24,
-        passphrase_protection=False,
-        pin_protection=True,
-        label=None,
-        language="en-US",
-        input_callback=None,
-        type=messages.RecoveryDeviceType.ScrambledWords,
-        dry_run=False,
-        u2f_counter=None,
+    client,
+    word_count=24,
+    passphrase_protection=False,
+    pin_protection=True,
+    label=None,
+    language="en-US",
+    input_callback=None,
+    type=messages.RecoveryDeviceType.ScrambledWords,
+    dry_run=False,
+    u2f_counter=None,
 ):
     if client.features.model == "1" and input_callback is None:
         raise RuntimeError("Input callback required for Trezor One")
@@ -172,17 +162,17 @@ def recover(
 @expect(messages.Success, field="message")
 @session
 def reset(
-        client,
-        display_random=False,
-        strength=None,
-        passphrase_protection=False,
-        pin_protection=True,
-        label=None,
-        language="en-US",
-        u2f_counter=0,
-        skip_backup=False,
-        no_backup=False,
-        backup_type=messages.BackupType.Bip39,
+    client,
+    display_random=False,
+    strength=None,
+    passphrase_protection=False,
+    pin_protection=True,
+    label=None,
+    language="en-US",
+    u2f_counter=0,
+    skip_backup=False,
+    no_backup=False,
+    backup_type=messages.BackupType.Bip39,
 ):
     if client.features.initialized:
         raise RuntimeError(
@@ -249,7 +239,7 @@ def se_proxy(client, message):
 
 @expect(messages.Success, field="message")
 def se_restore(
-        client, data, language="en-US", label="BIXIN KEY", passphrase_protection=True
+    client, data, language="en-US", label="BiXin Key", passphrase_protection=True
 ):
     ret = client.call(
         messages.BixinRestoreRequest(
