@@ -15,6 +15,7 @@
 # If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.
 
 import logging
+import os
 from typing import Iterable, List, Tuple, Type
 
 from ..exceptions import TrezorException
@@ -105,13 +106,25 @@ def all_transports() -> Iterable[Type[Transport]]:
     from .webusb import WebUsbTransport
     from .nfc import NFCTransport
     from .bluetooth import BlueToothTransport
-    from .android_usb import AndroidUsbTransport
-    from .bluetooth_ios import BlueToothIosHandler
-    return set(
-        cls
-        for cls in (BridgeTransport, HidTransport, UdpTransport, WebUsbTransport, NFCTransport, BlueToothTransport, AndroidUsbTransport, BlueToothIosHandler)
-        if cls.ENABLED
-    )
+
+    if "iOS_DATA" in os.environ:
+        from .bluetooth_ios import BlueToothIosTransport
+        return set(
+            cls
+            for cls in (BridgeTransport, HidTransport, UdpTransport, WebUsbTransport, NFCTransport, BlueToothTransport,
+                        BlueToothIosTransport)
+            if cls.ENABLED
+        )
+    elif "ANDROID_DATA" in os.environ:
+        from .android_usb import AndroidUsbTransport
+        return set(
+            cls
+            for cls in (BridgeTransport, HidTransport, UdpTransport, WebUsbTransport, NFCTransport, BlueToothTransport,
+                        AndroidUsbTransport)
+            if cls.ENABLED
+        )
+    else:
+        LOG.error("Only support android and ios")
 
 
 def enumerate_devices() -> Iterable[Transport]:
