@@ -99,7 +99,7 @@ class CustomerUI:
             timer = Timer(1.0, lambda : protocol.notify())
             timer.start()
             return
-        cls.handler.sendEmptyMessage(9)
+        cls.handler.sendEmptyMessage(code)
         return
 
     def finished(self):

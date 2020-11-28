@@ -48,7 +48,7 @@ def backup(client):
 @click.argument("passphrase_protection")
 @with_client
 def restore(
-    client, hex_data, language="en-US", label="BiXin Key", passphrase_protection=True
+    client, hex_data, language="en-US", label="OneKey", passphrase_protection=True
 ):
     """Perform device seed restore."""
     return device.se_restore(

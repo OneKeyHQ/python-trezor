@@ -26,24 +26,23 @@ RECOVERY_BACK = "\x08"  # backspace character, sent literally
 
 @expect(messages.Success, field="message")
 def apply_settings(
-    client,
-    label=None,
-    language=None,
-    use_passphrase=None,
-    homescreen=None,
-    auto_lock_delay_ms=None,
-    display_rotation=None,
-    passphrase_always_on_device: bool = None,
-    fastpay_pin: bool = None,
-    use_ble: bool = None,
-    use_se: bool = None,
-    is_bixinapp: bool = None,
-    fastpay_confirm: bool = None,
-    fastpay_money_limit: int = None,
-    fastpay_times: int = None,
-    safety_checks=None,
+        client,
+        label=None,
+        language=None,
+        use_passphrase=None,
+        homescreen=None,
+        auto_lock_delay_ms=None,
+        display_rotation=None,
+        passphrase_always_on_device: bool = None,
+        fastpay_pin: bool = None,
+        use_ble: bool = None,
+        use_se: bool = None,
+        is_bixinapp: bool = None,
+        fastpay_confirm: bool = None,
+        fastpay_money_limit: int = None,
+        fastpay_times: int = None,
+        safety_checks=None,
 ):
-
     settings = messages.ApplySettings(
         label=label,
         language=language,
@@ -109,16 +108,16 @@ def reboot(client):
 
 
 def recover(
-    client,
-    word_count=24,
-    passphrase_protection=False,
-    pin_protection=True,
-    label=None,
-    language="en-US",
-    input_callback=None,
-    type=messages.RecoveryDeviceType.ScrambledWords,
-    dry_run=False,
-    u2f_counter=None,
+        client,
+        word_count=24,
+        passphrase_protection=False,
+        pin_protection=True,
+        label=None,
+        language="en-US",
+        input_callback=None,
+        type=messages.RecoveryDeviceType.ScrambledWords,
+        dry_run=False,
+        u2f_counter=None,
 ):
     if client.features.model == "1" and input_callback is None:
         raise RuntimeError("Input callback required for Trezor One")
@@ -162,17 +161,17 @@ def recover(
 @expect(messages.Success, field="message")
 @session
 def reset(
-    client,
-    display_random=False,
-    strength=None,
-    passphrase_protection=False,
-    pin_protection=True,
-    label=None,
-    language="en-US",
-    u2f_counter=0,
-    skip_backup=False,
-    no_backup=False,
-    backup_type=messages.BackupType.Bip39,
+        client,
+        display_random=False,
+        strength=None,
+        passphrase_protection=False,
+        pin_protection=False,
+        label=None,
+        language="en-US",
+        u2f_counter=0,
+        skip_backup=False,
+        no_backup=False,
+        backup_type=messages.BackupType.Bip39,
 ):
     if client.features.initialized:
         raise RuntimeError(
@@ -221,15 +220,18 @@ def se_backup(client):
     ret = client.call(messages.BixinBackupRequest())
     return ret
 
+
 @expect(messages.BixinWhiteListAck, field="address")
 def bx_inquire_whitelist(client, type, addr_in=None):
     ret = client.call(messages.BixinWhiteListRequest(type=type, addr_in=addr_in))
     return ret
 
+
 @expect(messages.Success, field="message")
 def bx_add_or_delete_whitelist(client, type, addr_in=None):
     ret = client.call(messages.BixinWhiteListRequest(type=type, addr_in=addr_in))
     return ret
+
 
 @expect(messages.BixinOutMessageSE, field="outmessage")
 def se_proxy(client, message):
@@ -239,7 +241,7 @@ def se_proxy(client, message):
 
 @expect(messages.Success, field="message")
 def se_restore(
-    client, data, language="en-US", label="BiXin Key", passphrase_protection=True
+        client, data, language="en-US", label="OneKey", passphrase_protection=True
 ):
     ret = client.call(
         messages.BixinRestoreRequest(
@@ -257,14 +259,16 @@ def se_verify(client, data):
     ret = client.call(messages.BixinVerifyDeviceRequest(data=data))
     return ret
 
+
 @expect(messages.BixinBackupDeviceAck, field='mnemonics')
 def bixin_backup_device(client):
     ret = client.call(messages.BixinBackupDevice())
     return ret
 
+
 @expect(messages.Success, field="message")
 def bixin_load_device(
-        client, mnemonics, language="en-US", label="BIXIN KEY", skip_checksum=True
+        client, mnemonics=None, language="en-US", label="OneKey", skip_checksum=False
 ):
     ret = client.call(
         messages.BixinLoadDevice(
