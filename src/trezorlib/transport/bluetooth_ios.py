@@ -4,19 +4,15 @@ import time
 from typing import Iterable
 
 from .protocol import ProtocolBasedTransport, Handle, ProtocolV1
-
-from rubicon.objc import ObjCClass, ObjCInstance
+from rubicon.objc import ObjCClass
 
 WRITE_SUCCESS = True
 IS_CANCEL = False
+BleHandler = ObjCClass("NSBleHandler")
 
 
 class BlueToothIosHandler(Handle):
-    BLE = None  # type: ObjCInstance
-    BLE_DEVICE = None  # type: str
-    BLE_ADDRESS = ''  # type: str
-    CALL_BACK = None  # type: ObjCInstance
-    RESPONSE = ''  # type: str
+    BLE = BleHandler.alloc().init()  # type:
 
     def __init__(self) -> None:
         pass
@@ -35,13 +31,13 @@ class BlueToothIosHandler(Handle):
         cls.RESPONSE = ''
         IS_CANCEL = False
         start = int(time.time())
-        import threading
         while not IS_CANCEL and BlueToothIosTransport.ENABLED:
-            # print(f"ble write in ===={threading.currentThread().ident}")
             wait_seconds = int(time.time()) - start
+            WRITE_SUCCESS = cls.BLE.write_success()
+            IS_CANCEL = cls.BLE.is_cancel()
             if WRITE_SUCCESS and not IS_CANCEL:
                 WRITE_SUCCESS = False
-                success = cls.BLE.write(cls.BLE_DEVICE, chunks, cls.CALL_BACK)
+                success = cls.BLE.write(chunks)
                 if success:
                     return
                 else:
