@@ -136,14 +136,14 @@ class TrezorClient:
             res = mapping.decode(res_type, res_bytes)
             print(f"receive response from {self.transport.get_path()} : {res}")
             return res
-        elif self.transport.get_path() == "bluetooth":
+        elif self.transport.get_path() == "bluetooth" or self.transport.get_path() == "bluetooth_ios":
             self.transport.write_ble(msg_type, msg_bytes)
         else:
             self.transport.write(msg_type, msg_bytes)
 
     def _raw_read(self):
         __tracebackhide__ = True  # for pytest # pylint: disable=W0612
-        if self.transport.get_path() == "bluetooth":
+        if self.transport.get_path() == "bluetooth" or self.transport.get_path() == "bluetooth_ios":
             msg_type, msg_bytes = self.transport.read_ble()
         else:
             msg_type, msg_bytes = self.transport.read()

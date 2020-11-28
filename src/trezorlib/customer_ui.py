@@ -1,12 +1,18 @@
+import os
 import time
 
-from electrum.util import print_stderr, raw_input, _logger
-try:
-    from android.os import Handler
-except:
-    pass
 from threading import Timer
 from .transport import protocol
+from electrum.util import print_stderr, raw_input, _logger
+
+IS_ANDROID = True
+UI_HANDLER = None
+if "iOS_DATA" in os.environ:
+    from rubicon.objc import ObjCClass
+    UI_HANDLER = ObjCClass("OKBlueManager")
+    IS_ANDROID = False
+elif "ANDROID_DATA" in os.environ:
+    from android.os import Handler
 
 
 class CustomerUI:
@@ -17,7 +23,10 @@ class CustomerUI:
     passphrase = ''  # type: str
     user_cancel = 0
     pass_state = 0
-    handler = None  # type: Handler
+    handler = None
+    if not IS_ANDROID:
+            handler = UI_HANDLER.sharedInstance().getNotificationCenter()
+
     # this method must be classmethod in order to keep  Memory consistency
     @classmethod
     def get_pin(cls, code, show_strength=False) -> str:
@@ -26,9 +35,15 @@ class CustomerUI:
         cls.pin = ''
         if cls.handler:
             if code == 'Enter a new PIN for your Trezor:':
-                cls.handler.sendEmptyMessage(2)
+                if IS_ANDROID:
+                    cls.handler.sendEmptyMessage(2)
+                else:
+                    cls.handler.postNotificationName_object_("2", None)
             elif code == 'Enter your current Trezor PIN:':
-                cls.handler.sendEmptyMessage(1)
+                if IS_ANDROID:
+                    cls.handler.sendEmptyMessage(1)
+                else:
+                    cls.handler.postNotificationName_object_("1", None)
         start = int(time.time())
         while True:
             wait_seconds = int(time.time()) - start
@@ -43,7 +58,6 @@ class CustomerUI:
                 raise BaseException("waiting pin timeout")
             else:
                 time.sleep(0.0001)
-
 
     @classmethod
     def set_pass_state(cls, state):
@@ -74,9 +88,15 @@ class CustomerUI:
                        "you use this wallet your Trezor will prompt you for the "
                        "passphrase.  If you forget the passphrase you cannot "
                        "access the bitcoins in the wallet."):
-                cls.handler.sendEmptyMessage(6)
+                if IS_ANDROID:
+                    cls.handler.sendEmptyMessage(6)
+                else:
+                    cls.handler.postNotificationName_object_("6", None)
             elif msg == 'Enter the passphrase to unlock this wallet:':
-                cls.handler.sendEmptyMessage(3)
+                if IS_ANDROID:
+                    cls.handler.sendEmptyMessage(3)
+                else:
+                    cls.handler.postNotificationName_object_("3", None)
         start = int(time.time())
         while True:
             wait_seconds = int(time.time()) - start
@@ -96,10 +116,13 @@ class CustomerUI:
     @classmethod
     def button_request(cls, code):
         if code == 9:
-            timer = Timer(1.0, lambda : protocol.notify())
+            timer = Timer(1.0, lambda: protocol.notify())
             timer.start()
             return
-        cls.handler.sendEmptyMessage(code)
+        if IS_ANDROID:
+            cls.handler.sendEmptyMessage(code)
+        else:
+            cls.handler.postNotificationName_object_(f"{code}", None)
         return
 
     def finished(self):
