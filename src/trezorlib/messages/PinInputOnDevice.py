@@ -11,4 +11,4 @@ if __debug__:
 
 
 class PinInputOnDevice(p.MessageType):
-    MESSAGE_WIRE_TYPE = 5555
+    MESSAGE_WIRE_TYPE = 10000
