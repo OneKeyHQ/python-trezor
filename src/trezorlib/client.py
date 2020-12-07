@@ -164,8 +164,9 @@ class TrezorClient:
     def _callback_pin(self, msg):
         try:
             pin = self.ui.get_pin(msg.type)
-        except exceptions.Cancelled:
-            self.call_raw(messages.Cancel())
+        except BaseException as e:
+            if isinstance(e, exceptions.Cancelled) or self.transport.get_path() == "bluetooth":
+                self.call_raw(messages.Cancel())
             raise
 
         if any(d not in "123456789" for d in pin) or not (1 <= len(pin) <= 12):
