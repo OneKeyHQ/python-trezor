@@ -34,12 +34,12 @@ class CustomerUI:
         cls.user_cancel = 0
         cls.pin = ''
         if cls.handler:
-            if code == 'Enter a new PIN for your Trezor:':
+            if code == '2':
                 if IS_ANDROID:
                     cls.handler.sendEmptyMessage(2)
                 else:
                     cls.handler.postNotificationName_object_("2", None)
-            elif code == 'Enter your current Trezor PIN:':
+            elif code == '1':
                 if IS_ANDROID:
                     cls.handler.sendEmptyMessage(1)
                 else:
@@ -84,15 +84,12 @@ class CustomerUI:
             return ''
         cls.pass_state = 0
         if cls.handler:
-            if msg == ("Enter a passphrase to generate this wallet.  Each time "
-                       "you use this wallet your Trezor will prompt you for the "
-                       "passphrase.  If you forget the passphrase you cannot "
-                       "access the bitcoins in the wallet."):
+            if msg == "6":
                 if IS_ANDROID:
                     cls.handler.sendEmptyMessage(6)
                 else:
                     cls.handler.postNotificationName_object_("6", None)
-            elif msg == 'Enter the passphrase to unlock this wallet:':
+            elif msg == "3":
                 if IS_ANDROID:
                     cls.handler.sendEmptyMessage(3)
                 else:
