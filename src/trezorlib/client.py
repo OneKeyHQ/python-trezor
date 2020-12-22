@@ -164,6 +164,9 @@ class TrezorClient:
     def _callback_pin(self, msg):
         try:
             pin = self.ui.get_pin(msg.type)
+            # when pin == "000000" means that the pin should deal with device itself
+            if pin == "000000":
+                return self.call_raw(messages.PinInputOnDevice())
         except BaseException as e:
             if isinstance(e, exceptions.Cancelled) or self.transport.get_path() == "bluetooth":
                 self.call_raw(messages.Cancel())
