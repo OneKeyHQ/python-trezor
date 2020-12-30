@@ -25,6 +25,7 @@ RECOVERY_BACK = "\x08"  # backspace character, sent literally
 
 
 @expect(messages.Success, field="message")
+@session
 def apply_settings(
         client,
         label=None,
@@ -42,6 +43,7 @@ def apply_settings(
         fastpay_money_limit: int = None,
         fastpay_times: int = None,
         safety_checks=None,
+        experimental_features=None,
 ):
     settings = messages.ApplySettings(
         label=label,
@@ -59,42 +61,48 @@ def apply_settings(
         fastpay_money_limit=fastpay_money_limit,
         fastpay_times=fastpay_times,
         safety_checks=safety_checks,
+        experimental_features=experimental_features,
     )
 
     out = client.call(settings)
-    client.init_device()  # Reload Features
+    client.refresh_features()
     return out
 
 
 @expect(messages.Success, field="message")
+@session
 def apply_flags(client, flags):
     out = client.call(messages.ApplyFlags(flags=flags))
-    client.init_device()  # Reload Features
+    client.refresh_features()
     return out
 
 
 @expect(messages.Success, field="message")
+@session
 def change_pin(client, remove=False):
     ret = client.call(messages.ChangePin(remove=remove))
-    client.init_device()  # Re-read features
+    client.refresh_features()
     return ret
 
 
 @expect(messages.Success, field="message")
+@session
 def change_wipe_code(client, remove=False):
     ret = client.call(messages.ChangeWipeCode(remove=remove))
-    client.init_device()  # Re-read features
+    client.refresh_features()
     return ret
 
 
 @expect(messages.Success, field="message")
+@session
 def sd_protect(client, operation):
     ret = client.call(messages.SdProtect(operation=operation))
-    client.init_device()
+    client.refresh_features()
     return ret
 
 
 @expect(messages.Success, field="message")
+@session
 def wipe(client):
     ret = client.call(messages.WipeDevice())
     client.init_device()
@@ -102,11 +110,14 @@ def wipe(client):
 
 
 @expect(messages.Success, field="message")
+@session
 def reboot(client):
     ret = client.call(messages.BixinReboot())
     return ret
 
 
+@expect(messages.Success, field="message")
+@session
 def recover(
         client,
         word_count=24,
@@ -210,36 +221,48 @@ def reset(
 
 
 @expect(messages.Success, field="message")
+@session
 def backup(client):
     ret = client.call(messages.BackupDevice())
+    client.refresh_features()
     return ret
 
 
+@expect(messages.Success, field="message")
+def cancel_authorization(client):
+    return client.call(messages.CancelAuthorization())
+
+
 @expect(messages.BixinBackupAck, field="data")
+@session
 def se_backup(client):
     ret = client.call(messages.BixinBackupRequest())
     return ret
 
 
 @expect(messages.BixinWhiteListAck, field="address")
+@session
 def bx_inquire_whitelist(client, type, addr_in=None):
     ret = client.call(messages.BixinWhiteListRequest(type=type, addr_in=addr_in))
     return ret
 
 
 @expect(messages.Success, field="message")
+@session
 def bx_add_or_delete_whitelist(client, type, addr_in=None):
     ret = client.call(messages.BixinWhiteListRequest(type=type, addr_in=addr_in))
     return ret
 
 
 @expect(messages.BixinOutMessageSE, field="outmessage")
+@session
 def se_proxy(client, message):
     ret = client.call(messages.BixinMessageSE(inputmessage=bytes.fromhex(message)))
     return ret
 
 
 @expect(messages.Success, field="message")
+@session
 def se_restore(
         client, data, language="en-US", label="OneKey", passphrase_protection=True
 ):
@@ -261,12 +284,14 @@ def se_verify(client, data):
 
 
 @expect(messages.BixinBackupDeviceAck, field='mnemonics')
+@session
 def bixin_backup_device(client):
     ret = client.call(messages.BixinBackupDevice())
     return ret
 
 
 @expect(messages.Success, field="message")
+@session
 def bixin_load_device(
         client, mnemonics=None, language="en-US", label="OneKey", skip_checksum=False
 ):

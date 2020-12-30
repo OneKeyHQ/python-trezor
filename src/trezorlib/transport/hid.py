@@ -42,7 +42,7 @@ class HidHandle:
     ) -> None:
         self.path = path
         self.serial = serial
-        self.handle = None  # type: HidDeviceHandle
+        self.handle: HidDeviceHandle = None
         self.hid_version = None if probe_hid_version else 2
 
     def open(self) -> None:
@@ -90,7 +90,8 @@ class HidHandle:
 
     def read_chunk(self) -> bytes:
         while True:
-            chunk = self.handle.read(64)
+            # hidapi seems to return lists of ints instead of bytes
+            chunk = bytes(self.handle.read(64))
             if chunk:
                 break
             else:

@@ -81,7 +81,7 @@ Binance Chain commands.
   Commands:
     get-address     Get Binance address for specified path.
     get-public-key  Get Binance public key.
-    sign-tx         Sign Binance transaction
+    sign-tx         Sign Binance transaction.
 
 Bitcoin and Bitcoin-like coins commands.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -383,6 +383,7 @@ Device settings.
     label             Set new device label.
     passphrase        Enable, disable or configure passphrase protection.
     pin               Set, change or remove PIN.
+    safety-checks     Set safety check level.
     wipe-code         Set or remove the wipe code.
 
 Stellar commands.
