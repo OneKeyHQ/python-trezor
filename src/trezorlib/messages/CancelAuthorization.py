@@ -10,5 +10,5 @@ if __debug__:
         pass
 
 
-class PinInputOnDevice(p.MessageType):
-    MESSAGE_WIRE_TYPE = 10000
+class CancelAuthorization(p.MessageType):
+    MESSAGE_WIRE_TYPE = 86

@@ -28,6 +28,10 @@ def build_map():
         if msg_name.startswith("__"):
             continue
 
+        if msg_name == "Literal":
+            # TODO: remove this when we have a good implementation of enums
+            continue
+
         try:
             msg_class = getattr(messages, msg_name)
         except AttributeError:
@@ -72,7 +76,22 @@ def encode(msg: protobuf.MessageType) -> Tuple[int, bytes]:
 def decode(message_type: int, message_bytes: bytes) -> protobuf.MessageType:
     cls = get_class(message_type)
     buf = io.BytesIO(message_bytes)
-    return protobuf.load_message(buf, cls)
+    buf_dummy = None
+    res = None
+    if message_type == messages.Features.MESSAGE_WIRE_TYPE:
+        import copy
+        buf_dummy = copy.deepcopy(buf)
+    try:
+        res = protobuf.load_message(buf, cls)
+    except Exception as ignored:
+        print(f"exception===={repr(ignored)}")
+        if buf_dummy:
+            res = protobuf.load_message(buf_dummy, cls, True)
+    finally:
+        buf.close()
+        if buf_dummy:
+            buf_dummy.close()
+    return res
 
 
 build_map()

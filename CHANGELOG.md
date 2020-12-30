@@ -2,9 +2,86 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-_At the moment, the project does **not** adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). That is expected to change with version 1.0._
+## [0.13.0] - Unreleased
+[0.13.0]: https://github.com/trezor/trezor-firmware/compare/python/v0.12.2...master
+
+### Added
+
+- Enabled session management via `EndSession`  [#1227]
+- Support for temporary or permanent `safety-checks` setting
+
+### Changed
+
+- protobuf is aware of `required` fields and default values
+- `btc.sign_tx()` accepts keyword arguments for transaction metadata  [#1266]
+
+### Deprecated
+
+- instantiating protobuf objects with positional arguments is deprecated
+- values of required fields must be supplied at instantiation time. Omitting them is deprecated.
+- `details` argument to `btc.sign_tx()` is deprecated. Use keyword arguments instead.
+
+### Fixed
+
+- added missing dependency on `attrs`  [#1232]
+- fixed number imprecision in `build_tx.py` that could cause "invalid prevhash" errors
+
+### Removed
+
+- dropped Python 3.5 support  [#810]
+
+
+## [0.12.2] - 2020-08-27
+[0.12.2]: https://github.com/trezor/trezor-firmware/compare/python/v0.12.1...python/v0.12.2
+
+### Added
+
+- `trezorlib.toif` module (moved from internal) can encode and decode TOIF image format
+- `trezorctl set homescreen` was improved and extended to support PNG images for Trezor T
+
+### Changed
+
+- trezorctl will correctly notify the user if the image decoding library is missing
+
+### Fixed
+
+- fix exception in `trezorctl btc get-address`  [#1179]
+- fix exception in `trezorctl lisk sign-message`
+- fix exception in trezorctl commands that accept filenames  [#1196]
+- fix "Invalid homescreen" error when un-setting homescreen
+
+### Removed
+
+- removed option `--skip-vendor-header` from `trezorctl firmware-update` which did nothing  [#1210]
+
+
+## [0.12.1] - 2020-08-05
+[0.12.1]: https://github.com/trezor/trezor-firmware/compare/python/v0.12.0...python/v0.12.1
+
+### Added
+
+- `trezorctl set safety-checks` controls the new "safety checks" feature.  [#1126]
+- `trezorctl btc get-address` can create multisig addresses.
+- the following commands are now equivalent in trezorctl: `firmware-update`, `firmware-upgrade`,
+  `update-firmware`, `upgrade-firmware`
+- support for EXTERNAL input type  [#38], [#1052]
+- support for ownership proofs
+- support for pre-authorized CoinJoin transactions  [#37]
+- support for Cardano Shelley  [#948]
+
+### Changed
+
+- do not allow setting auto-lock delay unless PIN is configured
+
+### Fixed
+
+- correctly calculate hashes for very small firmwares  [f#1082]
+- unified file arguments in trezorctl
+- `TrezorClient.ping()` does not crash when device is PIN-locked
+
 
 ## [0.12.0] - 2020-04-01
 [0.12.0]: https://github.com/trezor/trezor-firmware/compare/python/v0.11.6...python/v0.12.0
@@ -362,6 +439,26 @@ _At the moment, the project does **not** adhere to [Semantic Versioning](https:/
 
 - gradually dropping Python 2 compatibility (pypi package will now be marked as Python 3 only)
 
+[f#41]: https://github.com/trezor/trezor-firmware/issues/41
+[f#87]: https://github.com/trezor/trezor-firmware/issues/87
+[f#116]: https://github.com/trezor/trezor-firmware/issues/116
+[f#117]: https://github.com/trezor/trezor-firmware/issues/117
+[f#224]: https://github.com/trezor/trezor-firmware/issues/224
+[f#226]: https://github.com/trezor/trezor-firmware/issues/226
+[f#363]: https://github.com/trezor/trezor-firmware/issues/363
+[f#411]: https://github.com/trezor/trezor-firmware/issues/411
+[f#420]: https://github.com/trezor/trezor-firmware/issues/420
+[f#445]: https://github.com/trezor/trezor-firmware/issues/445
+[f#510]: https://github.com/trezor/trezor-firmware/issues/510
+[f#525]: https://github.com/trezor/trezor-firmware/issues/525
+[f#666]: https://github.com/trezor/trezor-firmware/issues/666
+[f#680]: https://github.com/trezor/trezor-firmware/issues/680
+[f#681]: https://github.com/trezor/trezor-firmware/issues/681
+[f#778]: https://github.com/trezor/trezor-firmware/issues/778
+[f#823]: https://github.com/trezor/trezor-firmware/issues/823
+[f#1082]: https://github.com/trezor/trezor-firmware/issues/1082
+[#37]: https://github.com/trezor/trezor-firmware/issues/37
+[#38]: https://github.com/trezor/trezor-firmware/issues/38
 [#94]: https://github.com/trezor/python-trezor/issues/94
 [#167]: https://github.com/trezor/python-trezor/issues/167
 [#169]: https://github.com/trezor/python-trezor/issues/169
@@ -405,20 +502,13 @@ _At the moment, the project does **not** adhere to [Semantic Versioning](https:/
 [#349]: https://github.com/trezor/python-trezor/issues/349
 [#351]: https://github.com/trezor/python-trezor/issues/351
 [#352]: https://github.com/trezor/python-trezor/issues/352
-[f#41]: https://github.com/trezor/trezor-firmware/issues/41
-[f#87]: https://github.com/trezor/trezor-firmware/issues/87
-[f#116]: https://github.com/trezor/trezor-firmware/issues/116
-[f#117]: https://github.com/trezor/trezor-firmware/issues/117
-[f#224]: https://github.com/trezor/trezor-firmware/issues/224
-[f#226]: https://github.com/trezor/trezor-firmware/issues/226
-[f#363]: https://github.com/trezor/trezor-firmware/issues/363
-[f#411]: https://github.com/trezor/trezor-firmware/issues/411
-[f#420]: https://github.com/trezor/trezor-firmware/issues/420
-[f#445]: https://github.com/trezor/trezor-firmware/issues/445
-[f#510]: https://github.com/trezor/trezor-firmware/issues/510
-[f#525]: https://github.com/trezor/trezor-firmware/issues/525
-[f#666]: https://github.com/trezor/trezor-firmware/issues/666
-[f#680]: https://github.com/trezor/trezor-firmware/issues/680
-[f#681]: https://github.com/trezor/trezor-firmware/issues/681
-[f#778]: https://github.com/trezor/trezor-firmware/issues/778
-[f#823]: https://github.com/trezor/trezor-firmware/issues/823
+[#810]: https://github.com/trezor/trezor-firmware/issues/810
+[#948]: https://github.com/trezor/trezor-firmware/issues/948
+[#1052]: https://github.com/trezor/trezor-firmware/issues/1052
+[#1126]: https://github.com/trezor/trezor-firmware/issues/1126
+[#1179]: https://github.com/trezor/trezor-firmware/issues/1179
+[#1196]: https://github.com/trezor/trezor-firmware/issues/1196
+[#1210]: https://github.com/trezor/trezor-firmware/issues/1210
+[#1227]: https://github.com/trezor/trezor-firmware/issues/1227
+[#1232]: https://github.com/trezor/trezor-firmware/issues/1232
+[#1266]: https://github.com/trezor/trezor-firmware/issues/1266
