@@ -145,7 +145,12 @@ class TrezorClient:
     def _raw_read(self):
         __tracebackhide__ = True  # for pytest # pylint: disable=W0612
         if self.transport.get_path() == "bluetooth" or self.transport.get_path() == "bluetooth_ios":
-            msg_type, msg_bytes = self.transport.read_ble()
+            try:
+                msg_type, msg_bytes = self.transport.read_ble()
+            except BaseException as e:
+                if str(e) == "user cancel":
+                    self.cancel()
+                raise e
         else:
             msg_type, msg_bytes = self.transport.read()
         LOG.log(
