@@ -60,7 +60,7 @@ class BlueToothIosHandler(Handle):
             wait_seconds = int(time.time()) - start
             cls.RESPONSE = cls.BLE.characteristicRead()
             if cls.RESPONSE and not IS_CANCEL:
-                new_response = bytes(binascii.unhexlify(cls.RESPONSE))
+                new_response = bytes(binascii.unhexlify(str(cls.RESPONSE)))
 #                cls.RESPONSE = ''
                 return new_response
             elif wait_seconds >= 120:
