@@ -5,6 +5,7 @@ from typing import Iterable
 
 from .protocol import ProtocolBasedTransport, Handle, ProtocolV1
 from rubicon.objc import ObjCClass
+from electrum.i18n import _
 
 WRITE_SUCCESS = True
 IS_CANCEL = False
@@ -26,7 +27,7 @@ class BlueToothIosHandler(Handle):
     @classmethod
     def write_chunk(cls, chunk: bytes) -> None:
         global WRITE_SUCCESS, IS_CANCEL
-        assert cls.BLE is not None, "the bluetooth device is not available"
+        assert cls.BLE is not None, _("Bluetooth device not available")
         cls.BLE.characteristicWrite(bytes(chunk).hex())
         # chunks = binascii.unhexlify(bytes(chunk).hex())
 #        cls.RESPONSE = ''

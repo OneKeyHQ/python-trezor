@@ -7,6 +7,7 @@ from .protocol import ProtocolBasedTransport, Handle, ProtocolV1
 from cn.com.heaton.blelibrary.ble.callback import BleWriteCallback
 from cn.com.heaton.blelibrary.ble import Ble
 from cn.com.heaton.blelibrary.ble.model import BleDevice
+from electrum.i18n import _
 
 WRITE_SUCCESS = True
 IS_CANCEL = False
@@ -31,7 +32,7 @@ class BlueToothHandler(Handle):
     @classmethod
     def write_chunk(cls, chunk: bytes) -> None:
         global WRITE_SUCCESS, IS_CANCEL
-        assert cls.BLE is not None, "the bluetooth device is not available"
+        assert cls.BLE is not None, _("Bluetooth device not available")
         chunks = binascii.unhexlify(bytes(chunk).hex())
         cls.RESPONSE = ''
         IS_CANCEL = False
