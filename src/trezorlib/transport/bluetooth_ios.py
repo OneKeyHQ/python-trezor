@@ -46,7 +46,7 @@ class BlueToothIosHandler(Handle):
                 # else:
                 #     raise BaseException("send failed")
 #            elif wait_seconds >= 5:
-#                raise BaseException("waiting send timeout")
+#                raise BaseException(_("Waiting for send timeout"))
 #            else:
 #                time.sleep(0.001)
 #        if IS_CANCEL or not BlueToothIosTransport.ENABLED:
