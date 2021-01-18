@@ -11,6 +11,7 @@ if "iOS_DATA" in os.environ:
     from rubicon.objc import ObjCClass
     UI_HANDLER = ObjCClass("OKBlueManager")
     IS_ANDROID = False
+    TAG = "HardwareNotifications"
 elif "ANDROID_DATA" in os.environ:
     from android.os import Handler
 
@@ -27,6 +28,10 @@ class CustomerUI:
     if not IS_ANDROID:
             handler = UI_HANDLER.sharedInstance().getNotificationCenter()
 
+    @classmethod
+    def set_pin(cls, pin: str):
+        cls.pin = pin
+
     # this method must be classmethod in order to keep  Memory consistency
     @classmethod
     def get_pin(cls, code, show_strength=False) -> str:
@@ -38,12 +43,12 @@ class CustomerUI:
                 if IS_ANDROID:
                     cls.handler.sendEmptyMessage(2)
                 else:
-                    cls.handler.postNotificationName_object_("2", None)
+                    cls.handler.postNotificationName_object_(TAG, "2")
             elif code == '1':
                 if IS_ANDROID:
                     cls.handler.sendEmptyMessage(1)
                 else:
-                    cls.handler.postNotificationName_object_("1", None)
+                    cls.handler.postNotificationName_object_(TAG, "1")
         start = int(time.time())
         while True:
             wait_seconds = int(time.time()) - start
@@ -88,12 +93,12 @@ class CustomerUI:
                 if IS_ANDROID:
                     cls.handler.sendEmptyMessage(6)
                 else:
-                    cls.handler.postNotificationName_object_("6", None)
+                    cls.handler.postNotificationName_object_(TAG, "6")
             elif msg == "3":
                 if IS_ANDROID:
                     cls.handler.sendEmptyMessage(3)
                 else:
-                    cls.handler.postNotificationName_object_("3", None)
+                    cls.handler.postNotificationName_object_(TAG, "3")
         start = int(time.time())
         while True:
             wait_seconds = int(time.time()) - start
@@ -119,7 +124,7 @@ class CustomerUI:
         if IS_ANDROID:
             cls.handler.sendEmptyMessage(code)
         else:
-            cls.handler.postNotificationName_object_(f"{code}", None)
+            cls.handler.postNotificationName_object_(TAG, f"{code}")
         return
 
     def finished(self):

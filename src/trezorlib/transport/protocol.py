@@ -15,21 +15,30 @@
 # If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.
 
 import logging
+import os
 import struct
 from threading import Event
 from typing import Tuple
+
 from typing_extensions import Protocol as StructuralType
 
 from . import MessagePayload, Transport
+from ..messages import FirmwareUpload
 
+IS_ANDROID = True
+PROCESS_REPORTER = None
+if "iOS_DATA" in os.environ:
+    IS_ANDROID = False
+    from rubicon.objc import ObjCClass
+
+    PROCESS_REPORTER = ObjCClass("OKBlueManager").sharedInstance().getNotificationCenter()
 REPLEN = 64
-BLE_REPLEN = 192
+BLE_REPLEN = 192 if IS_ANDROID else 128
 REPLEN_NFC = 1024
 V2_FIRST_CHUNK = 0x01
 V2_NEXT_CHUNK = 0x02
 V2_BEGIN_SESSION = 0x03
 V2_END_SESSION = 0x04
-PROCESS_REPORTER = None
 HTTP = False
 OFFSET = 0
 TOTAL = 0
@@ -71,6 +80,13 @@ class Handle(StructuralType):
 
 def notify():
     event.set()
+
+
+def _publish_progress(process: int) -> None:
+    if IS_ANDROID:
+        PROCESS_REPORTER.publishProgress(process)
+    else:
+        PROCESS_REPORTER.postNotificationName_object_("process_notification", str(process))
 
 
 class Protocol:
@@ -167,16 +183,16 @@ class ProtocolV1(Protocol):
         buffer = bytearray(b"##" + header + message_data)
         origin = len(buffer)
         while buffer:
-            if PROCESS_REPORTER and origin >= 64:
+            if message_type == FirmwareUpload.MESSAGE_WIRE_TYPE and origin >= REPLEN:
                 left = round(len(buffer) / origin, 2)
-                PROCESS_REPORTER.publishProgress(int((1 - left) * 100))
-                if len(buffer) <= 64:
+                _publish_progress(int((1 - left) * 100))
+                if len(buffer) <= REPLEN:
                     PROCESS_REPORTER = None
                 # Report ID, data padded to 63 bytes
-            chunk = b"?" + buffer[: REPLEN - 1]
+            chunk = b"?" + buffer[:REPLEN - 1]
             chunk = chunk.ljust(REPLEN, b"\x00")
             self.handle.write_chunk(chunk)
-            buffer = buffer[63:]
+            buffer = buffer[REPLEN - 1:]
 
     def read(self) -> MessagePayload:
         buffer = bytearray()
@@ -195,7 +211,7 @@ class ProtocolV1(Protocol):
         if chunk[:3] != b"?##":
             raise RuntimeError("Unexpected magic characters")
         try:
-            msg_type, datalen = struct.unpack(">HL", chunk[3: 3 + self.HEADER_LEN])
+            msg_type, datalen = struct.unpack(">HL", chunk[3:3 + self.HEADER_LEN])
         except Exception:
             raise RuntimeError("Cannot parse header")
 
@@ -216,21 +232,21 @@ class ProtocolV1(Protocol):
         if HTTP and OFFSET:
             origin = TOTAL
         while buffer:
-            if PROCESS_REPORTER and origin >= 64:
+            if message_type == FirmwareUpload.MESSAGE_WIRE_TYPE and origin >= REPLEN:
                 left = round(len(buffer) / origin, 2)
-                PROCESS_REPORTER.publishProgress(int((1 - left) * 100))
-                if len(buffer) <= 64:
+                _publish_progress(int((1 - left) * 100))
+                if len(buffer) <= REPLEN:
                     PROCESS_REPORTER = None
             # Report ID, data padded to 63 bytes
-            waiting_packets = buffer[:189]
+            waiting_packets = buffer[:BLE_REPLEN - 3]
             send_packets = []
             while waiting_packets:
-                chunk = b"?" + waiting_packets[: REPLEN - 1]
+                chunk = b"?" + waiting_packets[:REPLEN - 1]
                 chunk = chunk.ljust(REPLEN, b"\x00")
                 send_packets.extend(chunk)
-                waiting_packets = waiting_packets[63:]
+                waiting_packets = waiting_packets[REPLEN - 1:]
             self.handle.write_chunk(bytes(send_packets))
-            buffer = buffer[189:]
+            buffer = buffer[BLE_REPLEN - 3:]
 
     def nfc_send(self, message_type: int, message_data: bytes) -> MessagePayload:
         global PROCESS_REPORTER, HTTP, OFFSET
@@ -242,21 +258,21 @@ class ProtocolV1(Protocol):
             origin = TOTAL
         while buffer:
             # used for android update progress bar
-            if PROCESS_REPORTER and origin >= 64:
+            if message_type == FirmwareUpload.MESSAGE_WIRE_TYPE and origin >= REPLEN:
                 left = round(len(buffer) / origin, 2)
-                PROCESS_REPORTER.publishProgress(int((1 - left) * 100))
-                if len(buffer) <= 64:
+                _publish_progress(int((1 - left) * 100))
+                if len(buffer) <= REPLEN:
                     PROCESS_REPORTER = None
             # in order to maximizing the transmission efficiency(253/packet in underlying,
             #  2205 is a tradeoff value)
             waiting_packets = buffer[:2205]
             send_packets = bytearray()
             while waiting_packets:
-                chunk = b"?" + waiting_packets[: REPLEN - 1]
+                chunk = b"?" + waiting_packets[:REPLEN - 1]
                 # Report ID, data padded to 63 bytes
                 chunk = chunk.ljust(REPLEN, b"\x00")
                 send_packets.extend(chunk)
-                waiting_packets = waiting_packets[63:]
+                waiting_packets = waiting_packets[REPLEN - 1:]
             print(f"send in nfc {bytes(send_packets).hex()}")
             # the response will returned immediately with b'\x90\x00' which means the firmware is
             # received this request. and then we would send another request with b'#**' to retrieve
@@ -273,7 +289,7 @@ class ProtocolV1(Protocol):
         if response[:3] != b"?##":
             raise RuntimeError(f"Unexpected magic characters =={response[:3]}")
         try:
-            msg_type, data_len = struct.unpack(">HL", response[3: 3 + self.HEADER_LEN])
+            msg_type, data_len = struct.unpack(">HL", response[3:3 + self.HEADER_LEN])
         except Exception:
             raise RuntimeError("Cannot parse header")
         return msg_type, response[3 + self.HEADER_LEN:]
@@ -283,7 +299,7 @@ class ProtocolV1(Protocol):
         if response[:3] != b"?##":
             raise RuntimeError("Unexpected magic characters")
         try:
-            msg_type, data_len = struct.unpack(">HL", response[3: 3 + self.HEADER_LEN])
+            msg_type, data_len = struct.unpack(">HL", response[3:3 + self.HEADER_LEN])
         except Exception:
             raise RuntimeError(f"Cannot parse header")
         return msg_type, response[3 + self.HEADER_LEN:]
