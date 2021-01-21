@@ -32,6 +32,10 @@ class CustomerUI:
     def set_pin(cls, pin: str):
         cls.pin = pin
 
+    @classmethod
+    def set_user_cancel(cls):
+        cls.user_cancel = 1
+
     # this method must be classmethod in order to keep  Memory consistency
     @classmethod
     def get_pin(cls, code, show_strength=False) -> str:
