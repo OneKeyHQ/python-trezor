@@ -33,7 +33,8 @@ if "iOS_DATA" in os.environ:
 
     PROCESS_REPORTER = ObjCClass("OKBlueManager").sharedInstance().getNotificationCenter()
 REPLEN = 64
-BLE_REPLEN = 192 if IS_ANDROID else 128
+REAL_REPLEN = REPLEN - 1
+BLE_REPLEN = int(REPLEN*3-3) if IS_ANDROID else int(REPLEN*2-2)
 REPLEN_NFC = 1024
 V2_FIRST_CHUNK = 0x01
 V2_NEXT_CHUNK = 0x02
@@ -189,10 +190,10 @@ class ProtocolV1(Protocol):
                 if len(buffer) <= REPLEN:
                     PROCESS_REPORTER = None
                 # Report ID, data padded to 63 bytes
-            chunk = b"?" + buffer[:REPLEN - 1]
+            chunk = b"?" + buffer[:REAL_REPLEN]
             chunk = chunk.ljust(REPLEN, b"\x00")
             self.handle.write_chunk(chunk)
-            buffer = buffer[REPLEN - 1:]
+            buffer = buffer[REAL_REPLEN:]
 
     def read(self) -> MessagePayload:
         buffer = bytearray()
@@ -238,15 +239,15 @@ class ProtocolV1(Protocol):
                 if len(buffer) <= REPLEN:
                     PROCESS_REPORTER = None
             # Report ID, data padded to 63 bytes
-            waiting_packets = buffer[:BLE_REPLEN - 3]
+            waiting_packets = buffer[:BLE_REPLEN]
             send_packets = []
             while waiting_packets:
-                chunk = b"?" + waiting_packets[:REPLEN - 1]
+                chunk = b"?" + waiting_packets[:REAL_REPLEN]
                 chunk = chunk.ljust(REPLEN, b"\x00")
                 send_packets.extend(chunk)
-                waiting_packets = waiting_packets[REPLEN - 1:]
+                waiting_packets = waiting_packets[REAL_REPLEN:]
             self.handle.write_chunk(bytes(send_packets))
-            buffer = buffer[BLE_REPLEN - 3:]
+            buffer = buffer[BLE_REPLEN:]
 
     def nfc_send(self, message_type: int, message_data: bytes) -> MessagePayload:
         global PROCESS_REPORTER, HTTP, OFFSET
@@ -268,11 +269,11 @@ class ProtocolV1(Protocol):
             waiting_packets = buffer[:2205]
             send_packets = bytearray()
             while waiting_packets:
-                chunk = b"?" + waiting_packets[:REPLEN - 1]
+                chunk = b"?" + waiting_packets[:REAL_REPLEN]
                 # Report ID, data padded to 63 bytes
                 chunk = chunk.ljust(REPLEN, b"\x00")
                 send_packets.extend(chunk)
-                waiting_packets = waiting_packets[REPLEN - 1:]
+                waiting_packets = waiting_packets[REAL_REPLEN:]
             print(f"send in nfc {bytes(send_packets).hex()}")
             # the response will returned immediately with b'\x90\x00' which means the firmware is
             # received this request. and then we would send another request with b'#**' to retrieve
