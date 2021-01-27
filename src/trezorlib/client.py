@@ -188,7 +188,7 @@ class TrezorClient:
             messages.FailureType.PinCancelled,
             messages.FailureType.PinExpected,
         ):
-            raise exceptions.PinException(resp.code, resp.message)
+            raise exceptions.PinException(resp.message)
         else:
             return resp
 

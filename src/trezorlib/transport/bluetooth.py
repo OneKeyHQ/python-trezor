@@ -8,6 +8,11 @@ from cn.com.heaton.blelibrary.ble.callback import BleWriteCallback
 from cn.com.heaton.blelibrary.ble import Ble
 from cn.com.heaton.blelibrary.ble.model import BleDevice
 from electrum.i18n import _
+import threading
+
+WRITE_SUCCESS = True
+IS_CANCEL = False
+lock = threading.RLock()
 
 
 class BlueToothHandler(Handle):
@@ -18,8 +23,6 @@ class BlueToothHandler(Handle):
     RESPONSE = ''  # type: str
     WRITE_TIMEOUT = 5
     READ_TIMEOUT = 120
-    WRITE_SUCCESS = True
-    IS_CANCEL = False
 
     def __init__(self) -> None:
         pass
@@ -32,56 +35,64 @@ class BlueToothHandler(Handle):
 
     @classmethod
     def set_cancel_flag(cls) -> None:
-        cls.IS_CANCEL = True
+        global IS_CANCEL
+        with lock:
+            IS_CANCEL = True
 
     @classmethod
     def set_write_success_flag(cls) -> None:
-        cls.WRITE_SUCCESS = True
+        global WRITE_SUCCESS
+        with lock:
+            WRITE_SUCCESS = True
 
     @classmethod
-    def set_response(cls, response: str):
-        cls.RESPONSE = response
+    def set_response(cls, response: str) -> None:
+        with lock:
+            cls.RESPONSE = response
 
     @classmethod
     def write_chunk(cls, chunk: bytes) -> None:
+        global WRITE_SUCCESS, IS_CANCEL
         assert cls.BLE is not None, _("Bluetooth device not available")
         chunks = binascii.unhexlify(bytes(chunk).hex())
         cls.RESPONSE = ''
-        cls.IS_CANCEL = False
+        IS_CANCEL = False
         start = int(time.time())
-        import threading
-        while not cls.IS_CANCEL:
-            # print(f"ble write in ===={threading.currentThread().ident}")
+        while not IS_CANCEL:
             wait_seconds = int(time.time()) - start
-            if cls.WRITE_SUCCESS and not cls.IS_CANCEL:
-                cls.WRITE_SUCCESS = False
-                success = cls.BLE.write(cls.BLE_DEVICE, chunks, cls.CALL_BACK)
-                if success:
-                    return
+            with lock:
+                if WRITE_SUCCESS and not IS_CANCEL:
+                    success = cls.BLE.write(cls.BLE_DEVICE, chunks, cls.CALL_BACK)
+                    if success:
+                        WRITE_SUCCESS = False
+                        return
+                    else:
+                        raise BaseException("send failed")
+                elif wait_seconds >= cls.WRITE_TIMEOUT:
+                    WRITE_SUCCESS = True
+                    raise BaseException(_("Waiting for send timeout"))
                 else:
-                    raise BaseException("send failed")
-            elif wait_seconds >= cls.WRITE_TIMEOUT:
-                raise BaseException(_("Waiting for send timeout"))
-            else:
-                time.sleep(0.001)
-        if cls.IS_CANCEL:
+                    time.sleep(0.001)
+        if IS_CANCEL:
             raise BaseException("user cancel")
 
     @classmethod
     def read_ble(cls) -> bytes:
+        global IS_CANCEL
         start = int(time.time())
-        cls.IS_CANCEL = False
-        while not cls.IS_CANCEL:
+        IS_CANCEL = False
+        while not IS_CANCEL:
             wait_seconds = int(time.time()) - start
-            if cls.RESPONSE and not cls.IS_CANCEL:
-                new_response = bytes(binascii.unhexlify(cls.RESPONSE))
-                cls.RESPONSE = ''
-                return new_response
-            elif wait_seconds >= cls.READ_TIMEOUT:
-                raise BaseException("read ble response timeout")
-            else:
-                time.sleep(0.1)
-        if cls.IS_CANCEL:
+            with lock:
+                if cls.RESPONSE and not IS_CANCEL:
+                    new_response = bytes(binascii.unhexlify(cls.RESPONSE))
+                    cls.RESPONSE = ''
+                    return new_response
+                elif wait_seconds >= cls.READ_TIMEOUT:
+                    raise BaseException("read ble response timeout")
+                else:
+                    time.sleep(0.1)
+        if IS_CANCEL:
             cls.RESPONSE = ''
             raise BaseException("user cancel")
 
