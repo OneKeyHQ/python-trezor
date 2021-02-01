@@ -91,7 +91,7 @@ class BlueToothHandler(Handle):
                 elif wait_seconds >= cls.READ_TIMEOUT:
                     raise BaseException("read ble response timeout")
                 else:
-                    time.sleep(0.1)
+                    time.sleep(0.001)
         if IS_CANCEL:
             cls.RESPONSE = ''
             raise BaseException("user cancel")
