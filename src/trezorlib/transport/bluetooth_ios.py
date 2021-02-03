@@ -82,7 +82,7 @@ class BlueToothIosHandler(Handle):
                     cls.RESPONSE = ''
                     return new_response
                 elif wait_seconds >= cls.READ_TIMEOUT:
-                    raise BaseException("read ble response timeout")
+                    raise BaseException(_("read ble response timeout"))
                 else:
                     time.sleep(0.1)
         if IS_CANCEL:

@@ -67,7 +67,7 @@ class BlueToothHandler(Handle):
                         WRITE_SUCCESS = False
                         return
                     else:
-                        raise BaseException("send failed")
+                        raise BaseException(_("send failed"))
                 elif wait_seconds >= cls.WRITE_TIMEOUT:
                     WRITE_SUCCESS = True
                     raise BaseException(_("Waiting for send timeout"))
@@ -89,7 +89,7 @@ class BlueToothHandler(Handle):
                     cls.RESPONSE = ''
                     return new_response
                 elif wait_seconds >= cls.READ_TIMEOUT:
-                    raise BaseException("read ble response timeout")
+                    raise BaseException(_("read ble response timeout"))
                 else:
                     time.sleep(0.001)
         if IS_CANCEL:
