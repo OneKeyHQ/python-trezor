@@ -499,6 +499,8 @@ def update(client, data, type=""):
         if type:
             resp = client.call(messages.FirmwareEraseBle(length=len(data)))
         else:
+            # in order to clear hardware http status in some special case
+            client.init_device()
             resp = client.call(messages.FirmwareErase(length=len(data)))
 
         # TREZORv1 method
