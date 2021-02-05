@@ -171,18 +171,18 @@ class TrezorClient:
         try:
             pin = self.ui.get_pin(msg.type)
             # when pin == "000000" means that the pin should deal with device itself
-            if pin == "000000":
+            if pin == "000000000":
                 return self.call_raw(messages.BixinPinInputOnDevice())
         except BaseException as e:
             if isinstance(e, exceptions.Cancelled) or self.transport.get_path() == "bluetooth":
                 self.call_raw(messages.Cancel())
             raise
 
-        if any(d not in "123456789" for d in pin) or not (1 <= len(pin) <= 12):
+        if any(d not in "123456789" for d in pin) or not (1 <= len(pin) <= 18):
             self.call_raw(messages.Cancel())
             raise ValueError("Invalid PIN provided")
 
-        resp = self.call_raw(messages.PinMatrixAck(pin=pin[0:6], new_pin=pin[6:]))
+        resp = self.call_raw(messages.PinMatrixAck(pin=pin[0:9], new_pin=pin[9:]))
         if isinstance(resp, messages.Failure) and resp.code in (
             messages.FailureType.PinInvalid,
             messages.FailureType.PinCancelled,
