@@ -497,7 +497,7 @@ def update(client, data, type=""):
 
     else:
         if type:
-            resp = client.call(messages.FirmwareEraseBle(length=len(data)))
+            resp = client.call(messages.FirmwareErase_ex(length=len(data)))
         else:
             # in order to clear hardware http status in some special case
             client.init_device()
