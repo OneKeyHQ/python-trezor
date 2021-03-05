@@ -126,9 +126,9 @@ class CustomerUI:
             timer.start()
             return
         if IS_ANDROID:
-            cls.handler.sendEmptyMessage(code)
+            cls.handler.sendEmptyMessage(code + 100)
         else:
-            cls.handler.postNotificationName_object_(TAG, f"{code}")
+            cls.handler.postNotificationName_object_(TAG, f"{code + 100}")
         return
 
     def finished(self):
