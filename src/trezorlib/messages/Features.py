@@ -65,6 +65,7 @@ class Features(p.MessageType):
         se_ver: str = None,
         backup_only: bool = None,
         onekey_version: str = None,
+        serial_num: str = None,
     ) -> None:
         self.capabilities = capabilities if capabilities is not None else []
         self.vendor = vendor
@@ -112,6 +113,7 @@ class Features(p.MessageType):
         self.se_ver = se_ver
         self.backup_only = backup_only
         self.onekey_version = onekey_version
+        self.serial_num = serial_num
 
 
     @classmethod
@@ -163,6 +165,7 @@ class Features(p.MessageType):
             506: ('se_ver', p.UnicodeType, None),
             507: ('backup_only', p.BoolType, None),
             508: ('onekey_version', p.UnicodeType, None),
+            509: ('serial_num', p.UnicodeType, None),
         }
     """
     inorder to compat with old hardware version
