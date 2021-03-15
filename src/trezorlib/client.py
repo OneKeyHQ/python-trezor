@@ -21,6 +21,7 @@ from typing import Optional
 
 from mnemonic import Mnemonic
 
+from electrum.i18n import _
 from . import MINIMUM_FIRMWARE_VERSION, exceptions, mapping, messages, tools
 from .log import DUMP_BYTES
 from .messages import Capability
@@ -164,7 +165,7 @@ class TrezorClient:
             "received message: {}".format(msg.__class__.__name__),
             extra={"protobuf": msg},
         )
-        print(f"receive response from {self.transport.get_path()} : {msg}")
+        print(f"receive response from >>>> {self.transport.get_path()} : {msg}")
         return msg
 
     def _callback_pin(self, msg):
@@ -172,27 +173,27 @@ class TrezorClient:
             pin = self.ui.get_pin(msg.type)
             # when pin == "000000" means that the pin should deal with device itself
             if pin == "000000000":
-                return self.call_raw(messages.BixinPinInputOnDevice())
+                resp = self.call_raw(messages.BixinPinInputOnDevice())
+            else:
+                if any(d not in "1234567890" for d in pin) or not (1 <= len(pin) <= 18):
+                    self.call_raw(messages.Cancel())
+                    raise ValueError(_("Invalid PIN provided"))
+                old_pin = pin[0:9].rstrip("0")
+                new_pin = pin[9:].rstrip("0")
+                resp = self.call_raw(messages.PinMatrixAck(pin=old_pin, new_pin=new_pin))
         except BaseException as e:
-            if isinstance(e, exceptions.Cancelled) or self.transport.get_path() == "bluetooth":
+            if isinstance(e, exceptions.Cancelled) or "bluetooth" in self.transport.get_path():
                 self.call_raw(messages.Cancel())
             raise
-
-        if any(d not in "1234567890" for d in pin) or not (1 <= len(pin) <= 18):
-            self.call_raw(messages.Cancel())
-            raise ValueError("Invalid PIN provided")
-
-        old_pin = pin[0:9].rstrip("0")
-        new_pin = pin[9:].rstrip("0")
-        resp = self.call_raw(messages.PinMatrixAck(pin=old_pin, new_pin=new_pin))
-        if isinstance(resp, messages.Failure) and resp.code in (
-            messages.FailureType.PinInvalid,
-            messages.FailureType.PinCancelled,
-            messages.FailureType.PinExpected,
-        ):
-            raise exceptions.PinException(resp.message)
         else:
-            return resp
+            if isinstance(resp, messages.Failure) and resp.code in (
+                    messages.FailureType.PinInvalid,
+                    messages.FailureType.PinCancelled,
+                    messages.FailureType.PinExpected,
+            ):
+                raise exceptions.PinException(_(resp.message))
+            else:
+                return resp
 
     def _callback_passphrase(self, msg: messages.PassphraseRequest):
         available_on_device = Capability.PassphraseEntry in self.features.capabilities
