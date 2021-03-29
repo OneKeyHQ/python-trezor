@@ -21,7 +21,10 @@ from typing import Optional
 
 from mnemonic import Mnemonic
 
-from electrum.i18n import _
+try:
+    from electrum.i18n import _
+except:
+    pass
 from . import MINIMUM_FIRMWARE_VERSION, exceptions, mapping, messages, tools
 from .log import DUMP_BYTES
 from .messages import Capability
@@ -84,10 +87,10 @@ class TrezorClient:
     """
 
     def __init__(
-        self,
-        transport,
-        ui,
-        session_id=None,
+            self,
+            transport,
+            ui,
+            session_id=None,
     ):
         LOG.info("creating client instance for device: {}".format(transport.get_path()))
         self.transport = transport
@@ -191,7 +194,7 @@ class TrezorClient:
                     messages.FailureType.PinCancelled,
                     messages.FailureType.PinExpected,
             ):
-                raise exceptions.PinException(_(resp.message))
+                raise exceptions.PinException(resp.message)
             else:
                 return resp
 
@@ -256,7 +259,13 @@ class TrezorClient:
             elif isinstance(resp, messages.Failure):
                 if resp.code == messages.FailureType.ActionCancelled:
                     raise exceptions.Cancelled
-                raise exceptions.TrezorFailure(resp)
+                # when got failure like this `<Failure: {'code': 1, 'message': 'Unknown message'}>`
+                # we assume that the device is in unnormal state like sleep mode, then we need to awake it.
+                elif resp.code == messages.FailureType.UnexpectedMessage and resp.message == "Unknown message":
+                    self.init_device()
+                    resp = self.call_raw(msg)
+                else:
+                    raise exceptions.TrezorFailure(resp)
             else:
                 return resp
 
@@ -293,7 +302,7 @@ class TrezorClient:
 
     @tools.session
     def init_device(
-        self, *, session_id: bytes = None, new_session: bool = False
+            self, *, session_id: bytes = None, new_session: bool = False
     ) -> Optional[bytes]:
         """Initialize the device and return a session ID.
 
@@ -364,9 +373,9 @@ class TrezorClient:
 
     @tools.expect(messages.Success, field="message")
     def ping(
-        self,
-        msg,
-        button_protection=False,
+            self,
+            msg,
+            button_protection=False,
     ):
         # We would like ping to work on any valid TrezorClient instance, but
         # due to the protection modes, we need to go through self.call, and that will

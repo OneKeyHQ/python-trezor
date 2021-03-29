@@ -123,7 +123,7 @@ def all_transports() -> Iterable[Type[Transport]]:
             if cls.ENABLED
         )
     else:
-        LOG.error("Only support android and ios")
+        return [WebUsbTransport]
 
 
 def enumerate_devices() -> Iterable[Transport]:
