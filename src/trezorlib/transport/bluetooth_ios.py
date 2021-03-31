@@ -9,7 +9,6 @@ from electrum.i18n import _
 import threading
 
 BleHandler = ObjCClass("OKBlueManager")
-WRITE_SUCCESS = True
 IS_CANCEL = False
 lock = threading.RLock()
 
@@ -19,6 +18,7 @@ class BlueToothIosHandler(Handle):
     WRITE_TIMEOUT = 5
     READ_TIMEOUT = 120
     RESPONSE = ""
+    SEND_INTERVAL = float(BLE.getBleTransmissionInterval())
 
     def __init__(self) -> None:
         pass
@@ -35,11 +35,6 @@ class BlueToothIosHandler(Handle):
         with lock:
             IS_CANCEL = True
 
-    @classmethod
-    def set_write_success_flag(cls) -> None:
-        global WRITE_SUCCESS
-        with lock:
-            WRITE_SUCCESS = True
 
     @classmethod
     def set_response(cls, response: str) -> None:
@@ -48,24 +43,17 @@ class BlueToothIosHandler(Handle):
 
     @classmethod
     def write_chunk(cls, chunk: bytes) -> None:
-        global WRITE_SUCCESS, IS_CANCEL
+        global IS_CANCEL
         assert cls.BLE is not None, _("Bluetooth device not available")
         chunks = binascii.unhexlify(bytes(chunk).hex())
         cls.RESPONSE = ''
         IS_CANCEL = False
-        start = int(time.time())
-        while not IS_CANCEL:
-            wait_seconds = int(time.time()) - start
-            with lock:
-                if WRITE_SUCCESS and not IS_CANCEL:
-                    cls.BLE.characteristicWrite(chunks)
-                    WRITE_SUCCESS = False
-                    return
-                elif wait_seconds >= cls.WRITE_TIMEOUT:
-                    WRITE_SUCCESS = True
-                    raise BaseException(_("Waiting for send timeout"))
-                else:
-                    time.sleep(0.001)
+        with lock:
+            if not IS_CANCEL:
+                cls.BLE.characteristicWrite(chunks)
+                # slow down the send rate. if not, firmware update may not work.
+                # TODO: find a more graceful way to coordination rate difference
+                time.sleep(cls.SEND_INTERVAL)
         if IS_CANCEL:
             raise BaseException("user cancel")
 
