@@ -509,7 +509,7 @@ def update(client, data, type=""):
             if isinstance(resp, messages.Success):
                 return
             else:
-                raise RuntimeError("Unexpected result %s" % resp)
+                raise RuntimeError(f"Unexpected result {resp} =====> {protocol.LAST_PACKAGE_DATA}")
 
         # TREZORv2 method
         while isinstance(resp, messages.FirmwareRequest):

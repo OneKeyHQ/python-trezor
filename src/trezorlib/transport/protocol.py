@@ -17,6 +17,7 @@
 import logging
 import os
 import struct
+from abc import ABC
 from threading import Event
 from typing import Tuple
 
@@ -34,7 +35,7 @@ if "iOS_DATA" in os.environ:
     PROCESS_REPORTER = ObjCClass("OKBlueManager").sharedInstance().getNotificationCenter()
 REPLEN = 64
 REAL_REPLEN = REPLEN - 1
-BLE_REPLEN = int(REPLEN*3-3) if IS_ANDROID else int(REPLEN*2-2)
+BLE_REPLEN = int(REPLEN * 3 - 3) if IS_ANDROID else int(REPLEN * 2 - 2)
 REPLEN_NFC = 1024
 V2_FIRST_CHUNK = 0x01
 V2_NEXT_CHUNK = 0x02
@@ -44,6 +45,7 @@ HTTP = False
 OFFSET = 0
 TOTAL = 0
 event = Event()
+LAST_PACKAGE_DATA = ""
 
 LOG = logging.getLogger(__name__)
 
@@ -139,7 +141,7 @@ class Protocol:
         raise NotImplementedError
 
 
-class ProtocolBasedTransport(Transport):
+class ProtocolBasedTransport(Transport, ABC):
     """Transport that implements its communications through a Protocol.
 
     Intended as a base class for implementations that proxy their communication
@@ -248,6 +250,10 @@ class ProtocolV1(Protocol):
                 waiting_packets = waiting_packets[REAL_REPLEN:]
             self.handle.write_chunk(bytes(send_packets))
             buffer = buffer[BLE_REPLEN:]
+            if message_type == FirmwareUpload.MESSAGE_WIRE_TYPE and not buffer:
+                global LAST_PACKAGE_DATA
+                LAST_PACKAGE_DATA = f"last packages send >>>>>> {bytes(send_packets).hex()}"
+                print(LAST_PACKAGE_DATA)
 
     def nfc_send(self, message_type: int, message_data: bytes) -> MessagePayload:
         global PROCESS_REPORTER, HTTP, OFFSET

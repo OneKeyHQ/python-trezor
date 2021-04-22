@@ -55,7 +55,6 @@ class BlueToothHandler(Handle):
         global WRITE_SUCCESS, IS_CANCEL
         assert cls.BLE is not None, _("Bluetooth device not available")
         chunks = binascii.unhexlify(bytes(chunk).hex())
-        cls.RESPONSE = ''
         IS_CANCEL = False
         start = int(time.time())
         while not IS_CANCEL:
@@ -64,6 +63,7 @@ class BlueToothHandler(Handle):
                 if WRITE_SUCCESS and not IS_CANCEL:
                     success = cls.BLE.write(cls.BLE_DEVICE, chunks, cls.CALL_BACK)
                     if success:
+                        cls.RESPONSE = ''
                         WRITE_SUCCESS = False
                         return
                     else:
