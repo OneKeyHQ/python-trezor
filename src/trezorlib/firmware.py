@@ -29,7 +29,6 @@ try:
 except ImportError:
     from pyblake2 import blake2s
 
-
 V1_SIGNATURE_SLOTS = 3
 V1_BOOTLOADER_KEYS = [
     bytes.fromhex(key)
@@ -134,7 +133,6 @@ Toif = c.Struct(
     "data" / c.Prefixed(c.Int32ul, c.GreedyBytes),
 )
 
-
 VendorTrust = c.Transformed(c.BitStruct(
     "_reserved" / c.Default(c.BitsInteger(9), 0),
     "show_vendor_string" / c.Flag,
@@ -142,7 +140,6 @@ VendorTrust = c.Transformed(c.BitStruct(
     "red_background" / c.Flag,
     "delay" / c.BitsInteger(4),
 ), _transform_vendor_trust, 2, _transform_vendor_trust, 2)
-
 
 VendorHeader = c.Struct(
     "_start_offset" / c.Tell,
@@ -170,14 +167,12 @@ VendorHeader = c.Struct(
     "signature" / c.Bytes(64),
 )
 
-
 VersionLong = c.Struct(
     "major" / c.Int8ul,
     "minor" / c.Int8ul,
     "patch" / c.Int8ul,
     "build" / c.Int8ul,
 )
-
 
 FirmwareHeader = c.Struct(
     "_start_offset" / c.Tell,
@@ -187,8 +182,8 @@ FirmwareHeader = c.Struct(
     "code_length" / c.Rebuild(
         c.Int32ul,
         lambda this:
-            len(this._.code) if "code" in this._
-            else (this.code_length or 0)
+        len(this._.code) if "code" in this._
+        else (this.code_length or 0)
     ),
     "version" / VersionLong,
     "fix_version" / VersionLong,
@@ -213,7 +208,6 @@ FirmwareHeader = c.Struct(
     ),
 )
 
-
 """Raw firmware image.
 
 Consists of firmware header and code block.
@@ -226,7 +220,6 @@ FirmwareImage = c.Struct(
     c.Terminated,
 )
 
-
 """Firmware image prefixed by a vendor header.
 
 This is the expected format of firmware binaries for Trezor T."""
@@ -235,7 +228,6 @@ VendorFirmware = c.Struct(
     "image" / FirmwareImage,
     c.Terminated,
 )
-
 
 """Legacy firmware image.
 Consists of a custom header and code block.
@@ -259,6 +251,7 @@ LegacyFirmware = c.Struct(
 
     "embedded_onev2" / c.RestreamData(c.this.code, c.Optional(FirmwareImage)),
 )
+
 
 # fmt: on
 
@@ -297,7 +290,7 @@ def digest_onev1(fw: c.Container) -> bytes:
 
 
 def check_sig_v1(
-    digest: bytes, key_indexes: List[int], signatures: List[bytes]
+        digest: bytes, key_indexes: List[int], signatures: List[bytes]
 ) -> None:
     distinct_key_indexes = set(i for i in key_indexes if i != 0)
     if not distinct_key_indexes:
@@ -349,11 +342,11 @@ def digest_onev2(fw: c.Container) -> bytes:
 
 
 def calculate_code_hashes(
-    code: bytes,
-    code_offset: int,
-    hash_function: Callable = blake2s,
-    chunk_size: int = V2_CHUNK_SIZE,
-    padding_byte: bytes = None,
+        code: bytes,
+        code_offset: int,
+        hash_function: Callable = blake2s,
+        chunk_size: int = V2_CHUNK_SIZE,
+        padding_byte: bytes = None,
 ) -> None:
     hashes = []
     # End offset for each chunk. Normally this would be (i+1)*chunk_size for i-th chunk,
@@ -469,7 +462,7 @@ def digest(version: FirmwareFormat, fw: c.Container) -> bytes:
 
 
 def validate(
-    version: FirmwareFormat, fw: c.Container, allow_unsigned: bool = False
+        version: FirmwareFormat, fw: c.Container, allow_unsigned: bool = False
 ) -> None:
     if version == FirmwareFormat.TREZOR_ONE:
         return validate_onev1(fw, allow_unsigned)
@@ -505,15 +498,18 @@ def update(client, data, type=""):
 
         # TREZORv1 method
         if isinstance(resp, messages.Success):
-            resp = client.call(messages.FirmwareUpload(payload=data))
-            if isinstance(resp, messages.Success):
-                return
+            try:
+                resp = client.call(messages.FirmwareUpload(payload=data))
+                if isinstance(resp, messages.Success):
+                    return
+            except BaseException as e:
+                raise RuntimeError(f"get error {e}  ========= {protocol.LAST_PACKAGE_DATA}")
             else:
-                raise RuntimeError(f"Unexpected result {resp} =====> {protocol.LAST_PACKAGE_DATA}")
+                raise RuntimeError(f"Unexpected result {resp}")
 
         # TREZORv2 method
         while isinstance(resp, messages.FirmwareRequest):
-            payload = data[resp.offset : resp.offset + resp.length]
+            payload = data[resp.offset: resp.offset + resp.length]
             digest = blake2s(payload).digest()
             resp = client.call(messages.FirmwareUpload(payload=payload, hash=digest))
     protocol.HTTP = False
