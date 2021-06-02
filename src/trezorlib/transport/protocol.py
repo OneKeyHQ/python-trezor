@@ -32,7 +32,6 @@ if "iOS_DATA" in os.environ:
     IS_ANDROID = False
     from rubicon.objc import ObjCClass
 
-    PROCESS_REPORTER = ObjCClass("OKBlueManager").sharedInstance().getNotificationCenter()
 REPLEN = 64
 REAL_REPLEN = REPLEN - 1
 BLE_REPLEN = int(REPLEN * 3 - 3) if IS_ANDROID else int(REPLEN * 2 - 2)
@@ -86,9 +85,12 @@ def notify():
 
 
 def _publish_progress(process: int) -> None:
+    global PROCESS_REPORTER
     if IS_ANDROID:
         PROCESS_REPORTER.publishProgress(process)
     else:
+        if PROCESS_REPORTER is None:
+            PROCESS_REPORTER = ObjCClass("OKBlueManager").sharedInstance().getNotificationCenter()
         PROCESS_REPORTER.postNotificationName_object_("process_notification", str(process))
 
 
