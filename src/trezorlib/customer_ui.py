@@ -3,7 +3,7 @@ import time
 
 from threading import Timer
 from .transport import protocol
-from electrum.util import print_stderr, raw_input, _logger
+from electrum.util import print_stderr, _logger
 
 IS_ANDROID = True
 UI_HANDLER = None
@@ -18,15 +18,14 @@ elif "ANDROID_DATA" in os.environ:
 
 class CustomerUI:
     def __init__(self):
-        pass
+        if not IS_ANDROID and CustomerUI.handler is None:
+            CustomerUI.handler = UI_HANDLER.sharedInstance().getNotificationCenter()
 
     pin = ''  # type: str
     passphrase = ''  # type: str
     user_cancel = 0
     pass_state = 0
     handler = None
-    if not IS_ANDROID:
-            handler = UI_HANDLER.sharedInstance().getNotificationCenter()
 
     @classmethod
     def set_pin(cls, pin: str):

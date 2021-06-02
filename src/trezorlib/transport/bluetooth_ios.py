@@ -14,14 +14,17 @@ lock = threading.RLock()
 
 
 class BlueToothIosHandler(Handle):
-    BLE = BleHandler.sharedInstance()
+    BLE = None
     WRITE_TIMEOUT = 5
     READ_TIMEOUT = 120
     RESPONSE = ""
-    SEND_INTERVAL = float(BLE.getBleTransmissionInterval())
+    SEND_INTERVAL = None
 
     def __init__(self) -> None:
-        pass
+        if BlueToothIosHandler.BLE is None:
+            BlueToothIosHandler.BLE = BleHandler.sharedInstance()
+        if BlueToothIosHandler.SEND_INTERVAL is None:
+            BlueToothIosHandler.SEND_INTERVAL = float(BlueToothIosHandler.BLE.getBleTransmissionInterval())
 
     def open(self) -> None:
         pass
@@ -34,7 +37,6 @@ class BlueToothIosHandler(Handle):
         global IS_CANCEL
         with lock:
             IS_CANCEL = True
-
 
     @classmethod
     def set_response(cls, response: str) -> None:
