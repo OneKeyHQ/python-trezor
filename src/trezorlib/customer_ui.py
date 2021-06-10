@@ -9,7 +9,7 @@ IS_ANDROID = True
 UI_HANDLER = None
 if "iOS_DATA" in os.environ:
     from rubicon.objc import ObjCClass
-    UI_HANDLER = ObjCClass("OKBlueManager")
+    UI_HANDLER = ObjCClass("OKHwNotiManager")
     IS_ANDROID = False
     TAG = "HardwareNotifications"
 elif "ANDROID_DATA" in os.environ:
