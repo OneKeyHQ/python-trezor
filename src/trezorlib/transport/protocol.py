@@ -90,7 +90,7 @@ def _publish_progress(process: int) -> None:
         PROCESS_REPORTER.publishProgress(process)
     else:
         if PROCESS_REPORTER is None:
-            PROCESS_REPORTER = ObjCClass("OKBlueManager").sharedInstance().getNotificationCenter()
+            PROCESS_REPORTER = ObjCClass("OKHwNotiManager").sharedInstance().getNotificationCenter()
         PROCESS_REPORTER.postNotificationName_object_("process_notification", str(process))
 
 
